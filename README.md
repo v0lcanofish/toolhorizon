@@ -2,7 +2,95 @@
 
 > 建立 2026-09-11 ｜ 取代原 A（GRPO-Tamer）+ B（When2Search）双项目结构
 > 参考天花板：`agentic-grpo-longhorizon`（已本地 clone，2×A800 / 7B / 72B 模拟器，**只读**）
-> **当前状态：设计定稿，Stage 0 未开工**（按双轨排期，9/19 起全速）
+> **当前状态：设计 v2（A800 修订），创新点待 smoke test 后定**
+
+---
+
+## 🔄 v2 修订（2026-09-11 晚）：硬件升级 + 三个认知纠正
+
+**用户可租 A800** → 原"1×4090 降级复现"的定位作废。**1×A800 先 smoke test，确认后再决定加卡。**
+
+深挖 longhorizon 仓库后，**推翻了 v1 的三个前提**：
+
+| v1 说的 | 实际（已核配置文件） | 影响 |
+|---|---|---|
+| longhorizon 是 **7B 全参** | **7B + LoRA r=16/α=32** | "对齐它"= 用 LoRA，**比全参便宜得多** |
+| 上下文 S_max = 8192 | **8192 + 12288 = 20480** | 显存需求比 v1 算的大 |
+| KL coef = 0 | **0.01, low_var_kl** | 它用了 KL 约束 |
+
+**它的真实超参**（`configs/train/grpo/vanilla_grpo.yaml`）：
+```
+n=8 ｜ train_batch_size=4（=32 轨迹/步）｜ lr 5e-6
+temperature 0.7 ｜ top_p 0.9 ｜ max_turns 15+15
+optimizer_offload=true ｜ param_offload=true ｜ use_fused_kernels=true
+bypass_mode=true ｜ calculate_log_probs=true ｜ tensor_model_parallel_size=2
+```
+
+**它的三阶段基线（可直接当 E1 对照，不用自己跑 base）**：
+
+| 阶段 | pass^1 | 备注 |
+|---|---|---|
+| Base 7B | 0.160 | |
+| SFT | 0.145 | **SFT 后反而降了！** reasoning p50 63 → 22 token（模式压缩） |
+| GRPO step150（峰值） | **0.225** | |
+| GRPO step200（坍塌） | **0.175** | avg_turns 7.3→5.08，error_rate 0.010→0.200 |
+
+**实际训到 225 步就终止**（配置写 500），终止依据：grad_norm 衰减到 0.005-0.01 + pass^1 触顶回落。
+
+### 🎯 深挖发现的最大机会（v1 完全没看到）
+
+它的诊断报告白纸黑字承认：
+
+> **"τ-bench airline 官方只有 50 个 task。数据量小是本项目最核心的结构性约束。"**
+> `train ∩ eval = 40/50 = 80%` 重合
+> **"train.parquet 仅 40 task……无法扩大 train pool。所以「加数据」不是可选解法"**
+
+而 `experiments/sft_collect_airline/summary.json` 实测暴露：
+
+```
+num_tasks_with_success:  19 / 50  = 38%     ← 只有 38% 的任务采得出成功轨迹
+dropped_tasks:           31 个             ← 62% 被丢弃
+n_train_trajectories:    45                ← GRPO 训练集 ≈ 40-45 条
+unseen_task_ids:         10 个             ← "泛化"指标只有 10 题（统计不可靠）
+elapsed_seconds:         25,913 ≈ 7.2 小时  ← 用 72B best-of-16 采这些数据花的
+```
+
+**→ 它被迫放弃的方向，恰好是我们能做而它做不到的**：
+
+| | longhorizon | 我们 |
+|---|---|---|
+| 造 SFT 数据 | 72B 模型 best-of-16，**7.2 小时** | **程序化执行 gold action 序列，0 成本无限量** |
+| 训练集 | **40 条** | 扩题器生成 **400+** |
+| 泛化指标 | **10 道 unseen 题** | **200+ 道真不相交** |
+
+**这不是重复它，是解掉它自己承认解不掉的约束。** 叙事："它说加数据不是可选解法，我证明了那是它数据构造方法的限制，不是问题本身。"
+
+### 🧰 白捡的资产：它的配置可直接复用
+
+```
+configs/train/grpo/vanilla_grpo.yaml      ← baseline，超参全在
+configs/train/grpo/{lata,prm_lite,turn_discount}.yaml   ← 消融臂
+configs/train/mock/mock_grpo.yaml         ← ★ 单卡 5 步管线验证（n_gpus_per_node=1）
+configs/tool_config/tau_bench_airline_tools.yaml
+scripts/train/grpo/{run_vanilla.sh,build_grpo_parquet.py}
+verl/                                     ← vendored 的完整 veRL（0.6.1）
+docs/vanilla_grpo/vanilla_grpo_diagnosis.md   ← ★ 三大病因 + 14 种 reward hacking 模式
+```
+
+### ⚠️ 卡点（详见 `smoke-test-清单.md`）
+
+1. **`setup.sh` 第 5 步有 Python 语法错误**（行首多空格 + 说注释没注释）→ `set -e` 下整脚本崩
+2. **`experiments/sft_lora_merged` 不存在**（运行产物）→ smoke test 时把 `model.path` 改指 base 模型
+3. **`CUDA_HOME` 必须指系统 CUDA**（torch 是 cu126，系统工具链是 12.4）→ 开机先 `ls /usr/local/`
+
+**下一步 → `smoke-test-清单.md`（1 卡 ≤2 小时，验证环境 + 拿真实速度数字）**
+
+---
+
+## 📌 以下 v1 内容（4090 版）部分已过时，保留作推演记录
+
+> v1 是在"只有 1×4090 24GB"的前提下推的。**硬件部分已作废**，但
+> 「场景选择理由 / 工具 14→7 / 用户模拟器设计 / 风险清单 / 红线」仍然有效。
 
 ---
 
