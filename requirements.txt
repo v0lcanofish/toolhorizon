@@ -1,0 +1,28 @@
+# ToolHorizon 依赖清单
+#
+# ⚠️ 本项目有意分成【两个 Python 环境】—— 实测踩出来的，不是设计偏好：
+#
+#   环境 A（跑环境 / 探针 / 扩题器）  必须 Python ≥ 3.10
+#       τ-bench 用了 3.10+ 语法（envs/airline/env.py 的 match/case、
+#       model_utils 里的 `X | None` 注解），3.9 连 import 都过不去（SyntaxError）。
+#       本机用的是 D:/anaconda/envs/myenv/python.exe（3.13）
+#
+#   环境 B（量 token 长度）  需要 transformers / torch
+#       只跑 scripts/token_stats.py，不需要 τ-bench
+#
+# 两个环境不冲突，只是装的东西不一样。
+
+# ---------- 环境 A：跑环境 / 探针 ----------
+pydantic>=2.0            # τ-bench 的 Task / Action 是 pydantic 模型
+
+# ⚠️ tau-bench 不在 PyPI 上，需要自己 clone：
+#     git clone https://github.com/sierra-research/tau-bench
+#   然后让 env/bootstrap.py 能找到它（见该文件顶部的路径配置）。
+#   τ-bench 是 MIT 许可。
+
+# ---------- 环境 B：量 token 长度 ----------
+transformers>=4.40       # 只用 AutoTokenizer，不加载权重
+# torch                  # transformers 会带上；只跑 tokenizer 的话 CPU 版即可
+
+# ---------- 出图 ----------
+matplotlib>=3.5

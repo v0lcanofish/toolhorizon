@@ -1,0 +1,664 @@
+{
+  "read_only_tools": [
+    "calculate",
+    "get_reservation_details",
+    "get_user_details",
+    "list_all_airports",
+    "search_direct_flight",
+    "search_onestop_flight",
+    "think"
+  ],
+  "n_tasks": 50,
+  "n_db_changed": 30,
+  "n_db_neutral": 20,
+  "neutral_task_indices": [
+    12,
+    13,
+    15,
+    17,
+    18,
+    21,
+    24,
+    29,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    44,
+    47,
+    48,
+    49
+  ],
+  "changed_task_indices": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    14,
+    16,
+    19,
+    20,
+    22,
+    23,
+    25,
+    26,
+    27,
+    28,
+    30,
+    31,
+    32,
+    33,
+    34,
+    43,
+    45,
+    46
+  ],
+  "rows": [
+    {
+      "idx": 0,
+      "user_id": "mia_li_3668",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 1,
+      "user_id": "olivia_gonzalez_2305",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation"
+      ]
+    },
+    {
+      "idx": 2,
+      "user_id": "omar_davis_3817",
+      "n_actions": 5,
+      "n_read": 0,
+      "n_write": 5,
+      "n_outputs": 1,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_flights",
+        "update_reservation_flights",
+        "update_reservation_flights",
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 3,
+      "user_id": "sofia_kim_7287",
+      "n_actions": 2,
+      "n_read": 0,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_baggages"
+      ]
+    },
+    {
+      "idx": 4,
+      "user_id": "omar_rossi_1241",
+      "n_actions": 3,
+      "n_read": 0,
+      "n_write": 3,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_passengers",
+        "update_reservation_baggages"
+      ]
+    },
+    {
+      "idx": 5,
+      "user_id": "omar_rossi_1241",
+      "n_actions": 3,
+      "n_read": 0,
+      "n_write": 3,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_passengers",
+        "update_reservation_baggages"
+      ]
+    },
+    {
+      "idx": 6,
+      "user_id": "aarav_garcia_1177",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 7,
+      "user_id": "aarav_garcia_1177",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 8,
+      "user_id": "mohamed_silva_9265",
+      "n_actions": 2,
+      "n_read": 0,
+      "n_write": 2,
+      "n_outputs": 3,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 9,
+      "user_id": "mohamed_silva_9265",
+      "n_actions": 4,
+      "n_read": 0,
+      "n_write": 4,
+      "n_outputs": 3,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "book_reservation",
+        "book_reservation",
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 10,
+      "user_id": "mia_kim_4397",
+      "n_actions": 2,
+      "n_read": 0,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 11,
+      "user_id": "ivan_muller_7015",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 12,
+      "user_id": "amelia_sanchez_4739",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 13,
+      "user_id": "james_lee_6136",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": [
+        "transfer_to_human_agents"
+      ]
+    },
+    {
+      "idx": 14,
+      "user_id": "chen_lee_6825",
+      "n_actions": 5,
+      "n_read": 4,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_baggages"
+      ]
+    },
+    {
+      "idx": 15,
+      "user_id": "james_patel_9828",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 16,
+      "user_id": "ethan_martin_2396",
+      "n_actions": 2,
+      "n_read": 1,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "send_certificate"
+      ]
+    },
+    {
+      "idx": 17,
+      "user_id": "liam_khan_2521",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 18,
+      "user_id": "amelia_rossi_1297",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 19,
+      "user_id": "raj_brown_5782",
+      "n_actions": 3,
+      "n_read": 1,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_baggages"
+      ]
+    },
+    {
+      "idx": 20,
+      "user_id": "james_taylor_7043",
+      "n_actions": 3,
+      "n_read": 2,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 21,
+      "user_id": "daiki_lee_6144",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 22,
+      "user_id": "ivan_rossi_8555",
+      "n_actions": 5,
+      "n_read": 3,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 23,
+      "user_id": "yara_garcia_1905",
+      "n_actions": 5,
+      "n_read": 3,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "update_reservation_baggages"
+      ]
+    },
+    {
+      "idx": 24,
+      "user_id": "yara_garcia_1905",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 25,
+      "user_id": "aarav_ahmed_6699",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 26,
+      "user_id": "aarav_ahmed_6699",
+      "n_actions": 6,
+      "n_read": 4,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 27,
+      "user_id": "aarav_ahmed_6699",
+      "n_actions": 5,
+      "n_read": 4,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation"
+      ]
+    },
+    {
+      "idx": 28,
+      "user_id": "amelia_davis_8890",
+      "n_actions": 11,
+      "n_read": 8,
+      "n_write": 3,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "cancel_reservation",
+        "cancel_reservation"
+      ]
+    },
+    {
+      "idx": 29,
+      "user_id": "amelia_davis_8890",
+      "n_actions": 8,
+      "n_read": 8,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 30,
+      "user_id": "sophia_martin_4574",
+      "n_actions": 10,
+      "n_read": 8,
+      "n_write": 2,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "cancel_reservation"
+      ]
+    },
+    {
+      "idx": 31,
+      "user_id": "mohamed_hernandez_5188",
+      "n_actions": 7,
+      "n_read": 6,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation"
+      ]
+    },
+    {
+      "idx": 32,
+      "user_id": "sophia_silva_7557",
+      "n_actions": 4,
+      "n_read": 3,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "book_reservation"
+      ]
+    },
+    {
+      "idx": 33,
+      "user_id": "sophia_silva_7557",
+      "n_actions": 20,
+      "n_read": 16,
+      "n_write": 4,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "cancel_reservation",
+        "update_reservation_flights",
+        "update_reservation_flights",
+        "update_reservation_flights"
+      ]
+    },
+    {
+      "idx": 34,
+      "user_id": "daiki_muller_1116",
+      "n_actions": 7,
+      "n_read": 4,
+      "n_write": 3,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_flights",
+        "cancel_reservation",
+        "cancel_reservation"
+      ]
+    },
+    {
+      "idx": 35,
+      "user_id": "sophia_taylor_9065",
+      "n_actions": 2,
+      "n_read": 1,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": [
+        "transfer_to_human_agents"
+      ]
+    },
+    {
+      "idx": 36,
+      "user_id": "sophia_taylor_9065",
+      "n_actions": 2,
+      "n_read": 1,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": [
+        "transfer_to_human_agents"
+      ]
+    },
+    {
+      "idx": 37,
+      "user_id": "mei_brown_7075",
+      "n_actions": 1,
+      "n_read": 1,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 38,
+      "user_id": "sophia_silva_7557",
+      "n_actions": 1,
+      "n_read": 0,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": [
+        "transfer_to_human_agents"
+      ]
+    },
+    {
+      "idx": 39,
+      "user_id": "sophia_silva_7557",
+      "n_actions": 1,
+      "n_read": 1,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 40,
+      "user_id": "sophia_silva_7557",
+      "n_actions": 6,
+      "n_read": 6,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 41,
+      "user_id": "anya_garcia_5901",
+      "n_actions": 1,
+      "n_read": 1,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 42,
+      "user_id": "anya_garcia_5901",
+      "n_actions": 1,
+      "n_read": 1,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 43,
+      "user_id": "anya_garcia_5901",
+      "n_actions": 2,
+      "n_read": 1,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "update_reservation_passengers"
+      ]
+    },
+    {
+      "idx": 44,
+      "user_id": "anya_garcia_5901",
+      "n_actions": 2,
+      "n_read": 2,
+      "n_write": 0,
+      "n_outputs": 1,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 45,
+      "user_id": "noah_muller_9847",
+      "n_actions": 3,
+      "n_read": 2,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "send_certificate"
+      ]
+    },
+    {
+      "idx": 46,
+      "user_id": "noah_muller_9847",
+      "n_actions": 4,
+      "n_read": 3,
+      "n_write": 1,
+      "n_outputs": 0,
+      "db_changed": true,
+      "nonempty_actions": [
+        "send_certificate"
+      ]
+    },
+    {
+      "idx": 47,
+      "user_id": "raj_sanchez_7340",
+      "n_actions": 2,
+      "n_read": 2,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 48,
+      "user_id": "lucas_brown_4047",
+      "n_actions": 1,
+      "n_read": 1,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    },
+    {
+      "idx": 49,
+      "user_id": "emma_kim_9957",
+      "n_actions": 0,
+      "n_read": 0,
+      "n_write": 0,
+      "n_outputs": 0,
+      "db_changed": false,
+      "nonempty_actions": []
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "n_users": 500,
+  "n_reservations": 2000,
+  "n_flights": 300,
+  "n_routes": 118,
+  "by_tool": {
+    "cancel_reservation": 2000,
+    "update_reservation_baggages": 2000,
+    "update_reservation_flights": 735,
+    "update_reservation_passengers": 1080,
+    "book_reservation": 59000,
+    "send_certificate": 313
+  },
+  "total_upper": 65128,
+  "conservative": 8313,
+  "target": 400,
+  "pass": true
+}

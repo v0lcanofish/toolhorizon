@@ -1,0 +1,1082 @@
+{
+  "全量 14 个（基准）": {
+    "n_tools": 14,
+    "n_discriminative": 30,
+    "n_noop_pass": 19,
+    "tools": [
+      "book_reservation",
+      "calculate",
+      "cancel_reservation",
+      "get_reservation_details",
+      "get_user_details",
+      "list_all_airports",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "send_certificate",
+      "think",
+      "transfer_to_human_agents",
+      "update_reservation_baggages",
+      "update_reservation_flights",
+      "update_reservation_passengers"
+    ],
+    "detail": [
+      {
+        "idx": 0,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 1,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 2,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 3,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 4,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 5,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 6,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 7,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 8,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 9,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 10,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 11,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 12,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 13,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 14,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 15,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 16,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 17,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 18,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 19,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 20,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 21,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 22,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 23,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 24,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 25,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 26,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 27,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 28,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 29,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 30,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 31,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 32,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 33,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 34,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 35,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 36,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 37,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 38,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 39,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 40,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 41,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 42,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 43,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 44,
+        "db_changed": false,
+        "noop": 0.0
+      },
+      {
+        "idx": 45,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 46,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 47,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 48,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 49,
+        "db_changed": false,
+        "noop": 1.0
+      }
+    ]
+  },
+  "砍 think + list_all_airports（12）": {
+    "n_tools": 12,
+    "n_discriminative": 30,
+    "n_noop_pass": 19,
+    "tools": [
+      "book_reservation",
+      "calculate",
+      "cancel_reservation",
+      "get_reservation_details",
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "send_certificate",
+      "transfer_to_human_agents",
+      "update_reservation_baggages",
+      "update_reservation_flights",
+      "update_reservation_passengers"
+    ],
+    "detail": [
+      {
+        "idx": 0,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 1,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 2,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 3,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 4,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 5,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 6,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 7,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 8,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 9,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 10,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 11,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 12,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 13,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 14,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 15,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 16,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 17,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 18,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 19,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 20,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 21,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 22,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 23,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 24,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 25,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 26,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 27,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 28,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 29,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 30,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 31,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 32,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 33,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 34,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 35,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 36,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 37,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 38,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 39,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 40,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 41,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 42,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 43,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 44,
+        "db_changed": false,
+        "noop": 0.0
+      },
+      {
+        "idx": 45,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 46,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 47,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 48,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 49,
+        "db_changed": false,
+        "noop": 1.0
+      }
+    ]
+  },
+  "README 的 14→7 方案": {
+    "n_tools": 7,
+    "n_discriminative": 14,
+    "n_noop_pass": 33,
+    "tools": [
+      "calculate",
+      "get_reservation_details",
+      "get_user_details",
+      "search_direct_flight",
+      "search_onestop_flight",
+      "update_reservation_baggages",
+      "update_reservation_flights"
+    ],
+    "detail": [
+      {
+        "idx": 0,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 1,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 2,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 3,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 4,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 5,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 6,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 7,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 8,
+        "db_changed": false,
+        "noop": 0.0
+      },
+      {
+        "idx": 9,
+        "db_changed": false,
+        "noop": 0.0
+      },
+      {
+        "idx": 10,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 11,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 12,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 13,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 14,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 15,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 16,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 17,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 18,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 19,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 20,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 21,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 22,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 23,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 24,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 25,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 26,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 27,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 28,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 29,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 30,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 31,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 32,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 33,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 34,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 35,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 36,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 37,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 38,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 39,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 40,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 41,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 42,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 43,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 44,
+        "db_changed": false,
+        "noop": 0.0
+      },
+      {
+        "idx": 45,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 46,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 47,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 48,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 49,
+        "db_changed": false,
+        "noop": 1.0
+      }
+    ]
+  },
+  "只保留 gold 里出现过的（11）": {
+    "n_tools": 11,
+    "n_discriminative": 30,
+    "n_noop_pass": 19,
+    "tools": [
+      "book_reservation",
+      "calculate",
+      "cancel_reservation",
+      "get_reservation_details",
+      "get_user_details",
+      "search_direct_flight",
+      "send_certificate",
+      "transfer_to_human_agents",
+      "update_reservation_baggages",
+      "update_reservation_flights",
+      "update_reservation_passengers"
+    ],
+    "detail": [
+      {
+        "idx": 0,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 1,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 2,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 3,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 4,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 5,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 6,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 7,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 8,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 9,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 10,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 11,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 12,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 13,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 14,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 15,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 16,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 17,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 18,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 19,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 20,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 21,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 22,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 23,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 24,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 25,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 26,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 27,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 28,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 29,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 30,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 31,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 32,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 33,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 34,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 35,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 36,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 37,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 38,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 39,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 40,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 41,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 42,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 43,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 44,
+        "db_changed": false,
+        "noop": 0.0
+      },
+      {
+        "idx": 45,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 46,
+        "db_changed": true,
+        "noop": 0.0
+      },
+      {
+        "idx": 47,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 48,
+        "db_changed": false,
+        "noop": 1.0
+      },
+      {
+        "idx": 49,
+        "db_changed": false,
+        "noop": 1.0
+      }
+    ]
+  }
+}

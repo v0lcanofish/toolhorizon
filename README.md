@@ -2,7 +2,175 @@
 
 > 建立 2026-09-11 ｜ 取代原 A（GRPO-Tamer）+ B（When2Search）双项目结构
 > 参考天花板：`agentic-grpo-longhorizon`（已本地 clone，2×A800 / 7B / 72B 模拟器，**只读**）
-> **当前状态：设计 v2（A800 修订），创新点待 smoke test 后定**
+> **当前状态：Stage 0 进行中（2026-09-15 开工），v4 修订见下**
+
+---
+
+## 🔴 v5 修订（2026-09-16 晚）：块 H3 mock 自测，抓到一个会毁掉训练的 bug
+
+> 脚本 `scripts/eval_mock.py`（零模型 / 零 GPU）｜ 新增 `env/rollout.py`（多轮循环）
+
+**`eval.py --mock` 全绿**：
+```
+① 多轮循环    50 道跑通 ｜ 消息序列合法 50/50 ｜ 字段与 SFT 数据一致 50/50
+② reward 判据 照本宣科 50/50 满分 ｜ 训练集不做 31/31 得 0 分 ｜ 探针集不做 19/19 满分
+③ 零方差机制 全对 → std=0 → advantage 全 0（零梯度）✅
+```
+
+### 🔥 最重要的：`calculate_reward()` **不是幂等的**
+
+```
+第 1 次 calculate_reward() = 0.0   ← 对
+第 2 次 calculate_reward() = 1.0   ← 错！变成假满分
+第 3 次 calculate_reward() = 1.0
+```
+
+**机制**：它内部会 `self.data = 重新加载数据()` 然后**重放 gold 动作**算 `gt_data_hash`。
+调用结束后 **`env.data` 被留在「gold 已执行过」的状态** ——
+于是第二次调用时，"当前哈希"已经是 gold 状态，两边相等 → **reward 恒为 1.0**。
+
+> ⚠️ **这是本项目最危险的一个坑**：训练循环里只要不小心调两次
+> （比如 `step()` 返回 `done` 时内部已经算过一次），
+> **所有题都会变成满分 → 组内全对 → `std=0` → advantage 全 0 → 训练完全无效**，
+> **而且 loss 曲线上完全看不出来。**
+
+**已固化**：`env/tau_env.py` 的 `reward_of(env, resp)` ——
+`done` 时用 `step()` 返回的 `resp.reward`（内部刚算过，是第一次）；
+只有撞 `max_turns` 截断时才自己调一次。
+
+### 第二个坑：假策略的收尾话必须带 `outputs`
+
+第一版 mock 只过 46/50 —— 4 道带 `outputs` 的题失败，
+因为假策略说的是固定的 `"All set. Anything else I can help with?"`。
+
+**这正是 v4 里 H1 发现的硬约束**（收尾必须嵌入关键信息，环境做字符串包含检查）——
+**换了个场景又撞上一次。**
+
+### 新增资产
+
+| 文件 | 作用 |
+|---|---|
+| `env/rollout.py` | **多轮 episode 循环**（训练/评测共用的采样入口） |
+| `env/tau_env.py::reward_of` | 安全的 reward 取值（绕开不幂等） |
+| `data/system_prompt.txt` | 系统提示（取自真实轨迹，6155 字符，含全部业务规则） |
+| `scripts/eval_mock.py` | mock 自测（Stage 0 出口判据） |
+
+---
+
+## 🔴 v4 修订（2026-09-16）：信号形状四路探针，修正 v3 的一处判断
+
+> 脚本 `scripts/probe_signal_shape.py`（零模型/零 GPU/可复现）｜ 报告 `reports/信号形状探针-2026-09-16.md`
+
+**四路探针**：`noop`（什么都不做）/ `gold`（重放）/ `readonly`（只做只读）/ **`foreign`（注入别题的 gold 写动作 = 模拟过调用）**
+
+| 类别 | 判定 | 题数 | 占比 |
+|---|---|---:|---:|
+| **S 有区分度** | `noop=0` 且 `gold=1` | **31** | 62.0% |
+| **O 单边信号** | `noop=1` 且 `foreign=0` | **19** | 38.0% |
+| **N 真·无信号** | `noop=1` 且 `foreign=1` | **0** | **0.0%** |
+
+### ⚠️ 修正 v3 的两处表述
+
+| v3 写的 | 实测 |
+|---|---|
+| "**20 道**（40%）的题 gold 改不动数据库" | **19 道（38%）**（v3 自己在下一行也写了 noop 通过 19 道，两处口径没对齐） |
+| "reward 与策略行为**无关**、恒为 1.0" | ❌ **错**。注入别题 gold 写动作后，**19 道全部掉到 0.0** |
+
+> ✅ **正确表述**：这 19 道题的 reward **与策略行为有关，但是单向的**——
+> **只惩罚"乱做"，不奖励任何"正确行为"**。因为题目本就不需要动作，
+> 不存在"做对了"这个状态，只存在"做错了"。
+>
+> ⭐ **没有一道题是真·无信号。**
+
+### ⭐⭐ 由此得出的「欠调用」机制
+
+```
+S 类（31 道，62%）：做对了 → +1 ；不做 → 0     →  教"该动就动"（难、稀疏）
+O 类（19 道，38%）：不做   → +1 ；乱做 → 0     →  教"别乱动"（易、密集）
+```
+
+**对弱策略，惩罚信号来得比奖励信号早、比奖励信号密 → 模型变保守 → 欠调用。**
+
+> 不是"没信号所以不学"，是**"有信号，但只有惩罚方向"**。
+
+### 新实验 D：S/O 配比 → 退化方向 ⭐
+
+只改 S:O 配比，三臂对照（31+19 / 31+0 / 31+38），观测工具调用数漂移。
+**把"欠调用"从"模型学坏了"变成"数据配比导致的、可预测、可控的现象"。**
+
+### ⚠️ 附带修正：轨迹 token 长度被低估 2.3 倍
+
+| 9/15 写的 | 2026-09-16 重测（n=268，**含工具 schema**） |
+|---|---|
+| p50 ≈ 2,512 token | **p50 = 6,692 ｜ p90 = 10,287 ｜ max = 23,936** |
+
+**根因**：9/15 只算了消息本身，**漏掉工具 schema 的固定税 3,249 token**。
+后果：**p90 = 10,287 > S_max 8192 → 必须做截断**（原以为"比标称小一个量级"）。
+另：**tool 返回占 65.7%**、assistant token 只占 **12%** → 裁剪 tool 字段比调 S_max 更划算。
+详见 `reports/token分布实测-2026-09-16.md`。
+
+### 附加发现：第四种信号形状
+
+`task[44]`（`n_write=0` 但 `noop=0`）：正解是**不改 DB 但必须汇报**（`outputs=["4"]`）。
+**「纯沟通型任务」在 τ-bench 里只有 1 道（2%）** → 扩题器不生成 `outputs` 会把它稀释到 0。
+
+---
+
+## 🔴 v3 修订（2026-09-15 晚）：Stage 0 第一批实测，推翻 v1/v2 的四处设计
+
+> 全部数字本地跑出、脚本可复现 ｜ 完整报告：`reports/Stage0-实测发现-2026-09-15.md`
+
+| # | 原文 | 实测后 |
+|---|---|---|
+| 1 | 「工具 **14 → 7**」 | ❌ **作废**，改 **12 个**（14 − `think` − `list_all_airports`）。README 方案会让有区分度的题从 30 掉到 **14**（废题率 40%→72%） |
+| 2 | 「gold 轨迹合成：重放 actions → 零成本无限量 SFT 数据」 | ❌ **不成立**。gold 里 `respond` 出现 **0 次**，重放出来的轨迹没有收尾回复，不可训练 |
+| 3 | 「tool schema ≈ 13,528 字符 ≈ 3,400 token」 | 实测 **9,144 字符 ≈ 2,345 token**，原数字高估 **48%** |
+| 4 | 「τ-bench airline **50 题**」 | 实测**有效题只有 30 道**。`20/50` 的题 gold 改不动数据库 |
+
+### ⭐ 最重要的一条：40% 的题没有区分度
+
+| 测量 | 结果 |
+|---|---|
+| gold 重放 + 合成 respond | **50 / 50** ✅（Stage 0 出口判据达成） |
+| 重放 gold 后数据库**没变**的题 | **20 / 50（40%）** |
+| **「什么都不做」直接拿满分 1.0 的题** | **19 / 50（38%）** |
+
+20 道废题构成：16 道 gold 里**一条写动作都没有**（含 7 道 0 动作题）+ 4 道只有 `transfer_to_human_agents`（该工具在 `terminate_tools` 里，`calculate_reward` 重放时**会跳过它**）。
+
+**规律非常干净——只要 gold 里有一条真写动作，题目就有区分度**（写动作 0 条 → 16/16 废；≥2 条 → 21/21 全有效）。
+
+**为什么致命**：放进 GRPO 组内归一化 `A_i = (r_i - mean) / (std + eps)`——
+全组不动 → `std=0` → 零梯度；一旦有 rollout 乱动 → 它拿 0 → `std>0` → 梯度指向**「别调工具」**。
+
+> ⚠️ **这等于人为制造出我们要研究的「欠调用（学会猜）」现象——不是模型学坏的，是数据喂出来的。**
+>
+> **这条把项目核心命题从设想变成实测**：不是坍塌了所以没信号，是**数据侧的样本结构天生在推"别动"**。
+> 而且 **longhorizon 没报告这条**——它说「50 题是核心约束」，实际**有区分度的只有 31 道**。
+
+> 🔴 **v4 修正（2026-09-16）**：本段的"20 道 / 40%"应为 **19 道 / 38%**；
+> 且"reward 与策略行为**无关**"是**错的**——它们是**单边信号**（乱做会掉分），
+> 详见顶部 v4 修订与 `reports/信号形状探针-2026-09-16.md`。
+
+### 一个反直觉的机制（顺手推翻了本仓脚本的早期推断）
+
+砍掉 `cancel_reservation`（11 道题在用）后，gold 重放通过率 **一点没降**（仍 46/50）。
+因为 `calculate_reward` 不是比对「标准终态」，而是**用同一套 `tools_map` 把 gold 重放一遍**再比哈希。
+工具被砍 → agent 调它失败、gold 重放它也失败 → **两边同样 no-op，哈希照样相等**。
+
+> **砍工具的代价是「题目失去区分度」，不是「reward 归零」。**
+
+### 环境（踩坑，已固化进 `env/bootstrap.py`）
+
+- **Python 3.9 跑不了**：`envs/airline/env.py:22` 的 `match` 是 3.10+ 语法，连 import 都过不去
+  → 统一用 `D:/anaconda/envs/myenv/python.exe`（3.13 + pydantic 2.13.5）
+- **litellm**：`envs/user.py:5` 顶层 import，用 `sys.modules` **注入桩**（参考仓库保持只读，未改一行）
+- **`load_user` 写死**在 `base.py:74` → 猴补丁
+- **`reset()` off-by-one**：`random.randint(0, len(tasks))` 会 IndexError → 永远显式传 `task_index`
+
+**Stage 0 出口判据进度**：
+- [x] gold 重放 + 合成 respond → **50/50** ✅
+- [x] **mock-policy 自测全绿** ✅（v5，`scripts/eval_mock.py`）
+- [x] **token 长度分布实测** ✅（v4，p50=6,692）
 
 ---
 
@@ -146,20 +314,35 @@ docs/vanilla_grpo/vanilla_grpo_diagnosis.md   ← ★ 三大病因 + 14 种 rewa
 | **真实轨迹** | `tau-bench/historical_trajectories/*.json` | **51 MB，airline 成功 268 条**（gpt-4o 84 + sonnet 184） |
 | 消融报告 | `agentic-grpo-longhorizon/docs/ablation/` | 4 臂完整指标 |
 
-**实测轨迹长度**（gpt-4o-airline 成功轨迹，脚本实测）：
+**实测轨迹长度**（n=268，gpt-4o 84 + sonnet 184，**含 14 工具 schema**，2026-09-16 重测）：
 ```
-p50 ≈ 2,512 token ｜ p90 ≈ 4,009 ｜ max ≈ 4,464
-单条 24 消息：system 1 / user 6 / assistant 11 / tool 6
+p50 = 6,692 token ｜ p90 = 10,287 ｜ max = 23,936 ｜ 平均 21 条消息
+其中 assistant token 只占 12%（752 / 6,692）；tool 返回占 65.7%
+工具 schema 固定开销：14 个 = 3,249 token ｜ 12 个 = 3,062 token
 ```
-> ⚠️ 它标称 16K，**真实成功轨迹中位数只有 2.5K** → 显存需求比标称小一个量级。
+> 🔴 **本节已修正（2026-09-16）**：原写 "p50 ≈ 2,512" 是**漏算了工具 schema** 的数字
+> （2,512 ≈ gpt-4o 不含 schema 的 2,624）。含 schema 后**标称 8192 与实测中位数是同一量级（1.2×），
+> 不是"小一个量级"**；且 **p90 = 10,287 已超过 S_max 8192 → 必须做截断**。
+> 详见 `reports/token分布实测-2026-09-16.md`。
 
-### 工具 14 → 7
+### 工具 14 → 12 ⚠️（v3 已修正，原「14 → 7」作废）
 
-**保留**：`get_user_details`、`get_reservation_details`、`search_direct_flight`、`search_onestop_flight`、`update_reservation_flights`、`update_reservation_baggages`、`calculate`
+**保留 12 个**：11 个 gold 里出现过的（`book_reservation` / `calculate` / `cancel_reservation` /
+`get_reservation_details` / `get_user_details` / `search_direct_flight` / `send_certificate` /
+`transfer_to_human_agents` / `update_reservation_baggages` / `update_reservation_flights` /
+`update_reservation_passengers`）+ `search_onestop_flight`
 
-**砍掉**：`book/cancel/send_certificate/transfer/list_airports/think`
+**砍掉 2 个**：`think`（返回空串，纯占轮次）、`list_all_airports`（wiki 里已有）
 
-> 完整 tool schema ≈ 13,528 字符 ≈ **3,400 token，每一轮都付**。对 1.5B 的 8K context 是 40% 固定税。
+**为什么不能按原方案砍到 7 个**（实测）：砍掉的工具若出现在 gold 里，会让该题**失去区分度**——
+reward 与策略行为无关、恒为 1.0。原方案让有区分度的题从 30 → **14**（废题率 40% → 72%）。
+
+`search_onestop_flight` 虽然 gold 里 0 次、砍了也不掉区分度，但 **agent 真的需要它**
+（task[0] 的 instruction 明写 "one stopover also fine"）——
+**gold 不记录搜索类动作 ≠ 搜索不需要发生**。
+
+> 实测 tool schema：14 个 = **9,144 字符 ≈ 2,345 token**；12 个 = 8,561 ≈ 2,195。
+> 对 8K context 是 **29% 固定税**（原文写 40%，高估了）。
 
 ### 用户模拟器：规则式，零 LLM
 
@@ -225,7 +408,11 @@ vLLM 起服务 → 收满 rollout 批次 → kill → 训练 → 存 adapter(37M
 
 - 规则式用户模拟器 `RuleBasedUserSim`
 - **扩题器**：采样 (user, reservation) → 模板化 instruction + gold action → **500–2000 个难度分级任务**（修掉 longhorizon"只有 50 题、train/eval 重合 80%"的死结）
-- **Gold 轨迹合成**：在 env 里直接执行 `tasks.py` 的 actions → **零模型零 API 的无限完美 SFT 数据**
+- ~~**Gold 轨迹合成**：在 env 里直接执行 `tasks.py` 的 actions → **零模型零 API 的无限完美 SFT 数据**~~
+  ⚠️ **v3 实测推翻**：gold 里 `respond` 出现 **0 次**，重放出来的轨迹**没有收尾回复**，
+  直接当 SFT 数据不可训练。可行路径待定（补合成回复？只拿 gold 当 reward 校验？）
+- ⭐ **19 道单边信号题的处理**（v4 已定方案，最高优先级）：**训练剔除、评测保留作「过调用」探针**
+  （它们是 50 题里唯一能测过调用的一批；见 v4 修订与 `reports/信号形状探针-2026-09-16.md`）
 - 奖励函数 + 评测 harness（pass@1、**组内零方差率**、avg_turns、per-turn 长度）
 - **Mock-policy 自测**：照搬 `Yu-Agentic-RL/scripts/grpo/search_agent.py --mock`
 - **精确 token 统计**：只下 Qwen tokenizer（~11MB，不需权重）纯 CPU 跑，**租卡前验证显存账**
@@ -264,6 +451,7 @@ vLLM 起服务 → 收满 rollout 批次 → kill → 训练 → 存 adapter(37M
 | **E1 复现验证** | longhorizon 三大病因在 1.5B 上成立吗 | 三病因逐条成立/不成立 + 差异说明 |
 | **E2 工具退化谱** ⭐ | 工具调用分布随训练怎么漂移 | **欠调用/过调用/抖动三条曲线 + 前兆指标** |
 | **E3 消融 4 臂** | dynamic sampling / LATA 各自贡献 | 消融对比表 |
+| **E6 S/O 配比** ⭐ v4 新增 | 惩罚型样本占比是否决定退化方向 | 三臂（31+19 / 31+0 / 31+38）的工具调用数漂移曲线 |
 | **E4 规模对比** | 1.5B vs longhorizon 7B 的坍塌模式差异 | 对照表（引用其公开数字） |
 | **E5 课程重标定** | 难度分布是不是坍塌主因 | 能力边界漂移曲线 |
 
@@ -335,12 +523,21 @@ S_max 8192 → 4096
 
 ## 验证方法
 
-**Stage 0 出口（全 CPU，租卡前）**：
+**Stage 0 出口（全 CPU，租卡前）** ⚠️ **解释器必须是 3.10+**（3.9 跑不了 τ-bench）：
 ```bash
 cd 代码库/projects/ToolHorizon
-D:/anaconda/python.exe eval.py --mock          # 期望全绿
-D:/anaconda/python.exe synth_gold.py --n 100   # 期望 oracle reward=1.0
-D:/anaconda/python.exe token_stats.py          # 期望 p50≈2500, p90≈4000, max≈4500
+PY="D:/anaconda/envs/myenv/python.exe"
+
+# ★ 已跑通（2026-09-15）：gold 重放 oracle
+PYTHONIOENCODING=utf-8 $PY scripts/verify_oracle.py
+#   → A gold 重放 46/50 ｜ B 重放+合成 respond 50/50 ✅ ｜ C 什么都不做 19/50
+
+PYTHONIOENCODING=utf-8 $PY scripts/analyze_hackable.py       # 40% 无区分度归因
+PYTHONIOENCODING=utf-8 $PY scripts/analyze_tool_subsets.py   # 工具子集对比
+
+# 待做：
+# $PY eval.py --mock          # 期望全绿
+# $PY token_stats.py          # 期望 p50≈2500, p90≈4000, max≈4500
 ```
 
 **GPU smoke test（首次租卡，30 分钟内）**：
@@ -361,13 +558,24 @@ python rollout_smoke.py --n 5                   # 5 条 rollout 跑通
 ```
 ToolHorizon/
 ├── README.md              ← 本文件（权威设计）
-├── env/                   ← τ-bench 包装 + 规则用户模拟器
-├── data/                  ← 扩题器产物 + gold 轨迹
-├── reward/                ← 奖励函数 + 评测 harness
+├── env/                   ← ✅ 已建：τ-bench 包装
+│   ├── bootstrap.py       ←   sys.path 接入 + litellm 桩（必须先 import）
+│   ├── user_sim.py        ←   规则式用户模拟器（当前占位版，slot 解析待做）
+│   └── tau_env.py         ←   env 工厂 + 工具子集 + 数据缓存
+├── data/                  ← ✅ 已建：实测产物
+│   ├── oracle_results.json        ← gold 重放 oracle 逐题结果
+│   ├── hackable_analysis.json     ← 无区分度题归因
+│   └── tool_subsets.json          ← 工具子集对比
+├── reward/                ← 奖励函数 + 评测 harness（待做）
 ├── train/                 ← SFT + GRPO（复用 Yu-Agentic-RL 的 grpo_update.py）
-├── observe/               ← 四指标观测器 + 工具退化指标 ⭐
-├── scripts/               ← mock 自测 / token 统计 / smoke test
-└── reports/               ← 实验图表
+├── observe/               ← 四指标观测器 + 工具退化指标 ⭐（待做）
+├── scripts/               ← ✅ 已建：5 个探针/验证脚本
+│   ├── probe_tau_bench.py         ← 工具分布 + gold 结构
+│   ├── probe_tasks_compare.py     ← tasks.py vs tasks_test.py
+│   ├── verify_oracle.py           ← ★ Stage 0 出口判据
+│   ├── analyze_hackable.py        ← ★ 40% 无区分度归因
+│   └── analyze_tool_subsets.py    ← ★ 工具子集方案
+└── reports/               ← ✅ Stage0-实测发现-2026-09-15.md
 ```
 
 ---
