@@ -77,6 +77,19 @@ def get_tools(names: Optional[Sequence[str]] = None) -> List[Type[Tool]]:
 _MASTER_DATA: Optional[Dict[str, Any]] = None
 
 
+def load_data_readonly() -> Dict[str, Any]:
+    """
+    拿**只读**的主数据（不 deepcopy）。
+
+    给用户模拟器查档案用：它只读不写，每次 deepcopy 5MB JSON 是纯浪费。
+    ⚠️ 别拿这个返回值去改 —— 会污染后面所有 env。
+    """
+    global _MASTER_DATA
+    if _MASTER_DATA is None:
+        _MASTER_DATA = load_data()
+    return _MASTER_DATA
+
+
 def load_data_cached() -> Dict[str, Any]:
     """
     语义与 tau_bench 的 load_data 完全一致（每次返回一份独立可改的数据），
@@ -107,6 +120,20 @@ def patch_load_user(user_sim_factory=RuleBasedUserSim) -> None:
     tb_base.load_user = lambda **kwargs: user_sim_factory()
 
 
+def _sim_factory_for(task, cls):
+    """
+    造一个「绑定到这道题」的模拟器工厂。
+
+    为什么必须绑定：模拟器的信息源是 task 的 instruction + gold 动作
+    （见 env/user_sim.py 的文件头）。而 `Env.__init__` 里 `load_user()` 是**不带参数**调的，
+    拿不到 task —— 所以只能在这里把 task 闭包进去。
+
+    ⚠️ 这是个全局猴补丁，所以 `build_env*` 必须在**建 Env 之前**调它。
+       我们是「建一个 env 就立刻 patch 一次」，构造是同步的，不会串。
+    """
+    return lambda: cls(task, load_data_readonly())
+
+
 patch_load_user()
 
 
@@ -132,6 +159,9 @@ def build_env(
         tools = list(ALL_TOOLS)
     else:
         tools = get_tools(tool_names)
+
+    # ⚠️ 必须在构造 Env 之前 —— Env.__init__ 里就会调 load_user()
+    patch_load_user(_sim_factory_for(TASKS[task_index], user_sim_factory))
 
     env = Env(
         data_load_func=load_data_cached,
@@ -193,6 +223,9 @@ def build_env_custom(
         task: tau_bench.types.Task（user_id / actions / instruction / outputs）
     """
     tools = list(ALL_TOOLS) if tool_names is None else get_tools(tool_names)
+
+    # ⚠️ 必须在构造 Env 之前 —— Env.__init__ 里就会调 load_user()
+    patch_load_user(_sim_factory_for(task, user_sim_factory))
 
     env = Env(
         data_load_func=load_data_cached,

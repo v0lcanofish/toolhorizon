@@ -20,9 +20,15 @@ pydantic>=2.0            # τ-bench 的 Task / Action 是 pydantic 模型
 #   然后让 env/bootstrap.py 能找到它（见该文件顶部的路径配置）。
 #   τ-bench 是 MIT 许可。
 
-# ---------- 环境 B：量 token 长度 ----------
-transformers>=4.40       # 只用 AutoTokenizer，不加载权重
-# torch                  # transformers 会带上；只跑 tokenizer 的话 CPU 版即可
+# ---------- 环境 B：量 token 长度 / 跑训练 ----------
+transformers>=4.40
+torch                    # CPU 版即可跑全部自测：pip install torch --index-url .../whl/cpu
+peft>=0.10               # LoRA
 
 # ---------- 出图 ----------
 matplotlib>=3.5
+
+# ---------- 只在 GPU 机器上装 ----------
+# ⚠️ vLLM 的版本必须和 torch / CUDA 对得上，**不要**为了装它去升级 torch。
+#    照着 GPU-上卡清单.md 第 2 步走。
+# vllm

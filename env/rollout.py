@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List
 
-from tau_bench.types import Action, RESPOND_ACTION_NAME
+from tau_bench.types import Action, RESPOND_ACTION_NAME  # noqa: F401
 
 from env.tau_env import build_env_custom, reward_of
 
@@ -87,6 +87,45 @@ Policy = Callable[[List[Dict[str, Any]]], Action]
 # ---------------------------------------------------------------- 循环
 
 
+def step_messages(
+    msgs: List[Dict[str, Any]],
+    ep: Episode,
+    action: Action,
+    resp,
+    task_id: int,
+) -> None:
+    """
+    把「一步动作 + 环境回应」写进消息列表。
+
+    ⭐ 单条循环（run_episode）和批量循环（train/rollout_batch.py）**共用这一份**。
+       分开写两份的话，训练采样的消息格式和评测/自测的就会漂移 ——
+       而格式漂移在本项目里是最隐蔽的杀手（loss 曲线完全看不出来）。
+    """
+    if action.name == RESPOND_ACTION_NAME:
+        msgs.append({"role": "assistant",
+                     "content": action.kwargs.get("content", "")})
+        # 用户回话 → role=user（**不进 loss**）
+        msgs.append({"role": "user", "content": resp.observation})
+    else:
+        ep.n_tool_calls += 1
+        call_id = f"call_{task_id}_{ep.n_tool_calls}"
+        msgs.append({
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [{
+                "id": call_id,
+                "type": "function",
+                "function": {"name": action.name,
+                             "arguments": _dump_args(action.kwargs)},
+            }],
+        })
+        msgs.append({"role": "tool", "tool_call_id": call_id,
+                     "name": action.name,
+                     # 工具结果可能很长（航班列表 JSON）——原样保留，
+                     # 裁剪是后面单独的一个消融轴（见 README 的 D-7）
+                     "content": resp.observation})
+
+
 def run_episode(
     task,
     policy: Policy,
@@ -119,38 +158,13 @@ def run_episode(
 
     ep = Episode(task_id=task_id, messages=msgs)
     resp = None
-    call_id = 0
 
     for _ in range(max_turns):
         action = policy(msgs)
         ep.n_turns += 1
 
         resp = env.step(action)
-
-        # ---- agent 这一轮是"调工具"还是"说话"？
-        if action.name == RESPOND_ACTION_NAME:
-            msgs.append({"role": "assistant",
-                         "content": action.kwargs.get("content", "")})
-            # 用户回话 → role=user（**不进 loss**）
-            msgs.append({"role": "user", "content": resp.observation})
-        else:
-            call_id += 1
-            ep.n_tool_calls += 1
-            msgs.append({
-                "role": "assistant",
-                "content": "",
-                "tool_calls": [{
-                    "id": f"call_{task_id}_{call_id}",
-                    "type": "function",
-                    "function": {"name": action.name,
-                                 "arguments": _dump_args(action.kwargs)},
-                }],
-            })
-            msgs.append({"role": "tool", "tool_call_id": f"call_{task_id}_{call_id}",
-                         "name": action.name,
-                         # 工具结果可能很长（航班列表 JSON）——原样保留，
-                         # 裁剪是后面单独的一个消融轴（见 README 的 D-7）
-                         "content": resp.observation})
+        step_messages(msgs, ep, action, resp, task_id)
 
         if resp.done:
             ep.done = True
@@ -173,4 +187,4 @@ def _dump_args(kwargs: Dict[str, Any]) -> str:
     return json.dumps(kwargs, ensure_ascii=False)
 
 
-__all__ = ["run_episode", "Episode", "Policy"]
+__all__ = ["run_episode", "step_messages", "Episode", "Policy", "load_system_prompt"]
