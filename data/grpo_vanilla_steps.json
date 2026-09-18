@@ -1,0 +1,41 @@
+{
+  "_note": "runs/vanilla 的逐轮 summary.json（从 AutoDL 上 cat 回来，2026-09-19 00:20 抓取，当时 22/25 轮）。字段含义见 runs/*/rollouts/step_NNN.summary.json。",
+  "_fetched_at": "2026-09-19 00:20",
+  "_run": "runs/vanilla  (rounds=25, n=8, max_seq_tokens=16384, length_norm=lata, init_adapter=adapter_sft10)",
+  "steps": [
+    {"step": 0,  "seconds": 533.657, "sec_per_trajectory": 2.152, "new_tokens": 442979,  "tok_per_sec": 830.08,  "zero_var_rate": 0.7419, "reward_mean": 0.1290, "pass_rate": 0.1290, "turns_mean": 18.899, "tool_calls_mean": 15.734, "malformed_rate": 0.03607, "truncated_rate": 0.26210},
+    {"step": 1,  "seconds": 592.101, "sec_per_trajectory": 2.388, "new_tokens": 580055,  "tok_per_sec": 979.66,  "zero_var_rate": 0.7419, "reward_mean": 0.1371, "pass_rate": 0.1371, "turns_mean": 17.988, "tool_calls_mean": 9.690,  "malformed_rate": 0.00883, "truncated_rate": 0.15323},
+    {"step": 2,  "seconds": 722.781, "sec_per_trajectory": 2.914, "new_tokens": 720754,  "tok_per_sec": 997.20,  "zero_var_rate": 0.8065, "reward_mean": 0.1411, "pass_rate": 0.1411, "turns_mean": 19.185, "tool_calls_mean": 10.048, "malformed_rate": 0.03482, "truncated_rate": 0.14516},
+    {"step": 3,  "seconds": 999.552, "sec_per_trajectory": 4.030, "new_tokens": 1080729, "tok_per_sec": 1081.21, "zero_var_rate": 0.8710, "reward_mean": 0.1290, "pass_rate": 0.1290, "turns_mean": 18.927, "tool_calls_mean": 6.702,  "malformed_rate": 0.01837, "truncated_rate": 0.12903},
+    {"step": 4,  "seconds": 675.141, "sec_per_trajectory": 2.722, "new_tokens": 751315,  "tok_per_sec": 1112.83, "zero_var_rate": 0.9032, "reward_mean": 0.1694, "pass_rate": 0.1694, "turns_mean": 17.242, "tool_calls_mean": 9.121,  "malformed_rate": 0.02673, "truncated_rate": 0.19758},
+    {"step": 5,  "seconds": 597.488, "sec_per_trajectory": 2.409, "new_tokens": 691013,  "tok_per_sec": 1156.53, "zero_var_rate": 0.9032, "reward_mean": 0.1734, "pass_rate": 0.1734, "turns_mean": 14.919, "tool_calls_mean": 8.069,  "malformed_rate": 0.02966, "truncated_rate": 0.16532},
+    {"step": 6,  "seconds": 696.148, "sec_per_trajectory": 2.807, "new_tokens": 849062,  "tok_per_sec": 1219.66, "zero_var_rate": 0.8710, "reward_mean": 0.1613, "pass_rate": 0.1613, "turns_mean": 15.250, "tool_calls_mean": 7.633,  "malformed_rate": 0.03438, "truncated_rate": 0.26613},
+    {"step": 7,  "seconds": 1464.389,"sec_per_trajectory": 5.905, "new_tokens": 1592597, "tok_per_sec": 1087.55, "zero_var_rate": 0.9677, "reward_mean": 0.1532, "pass_rate": 0.1532, "turns_mean": 17.073, "tool_calls_mean": 4.315,  "malformed_rate": 0.02382, "truncated_rate": 0.34677},
+    {"step": 8,  "seconds": 1251.966,"sec_per_trajectory": 5.048, "new_tokens": 1346045, "tok_per_sec": 1075.15, "zero_var_rate": 0.9677, "reward_mean": 0.1532, "pass_rate": 0.1532, "turns_mean": 16.492, "tool_calls_mean": 5.601,  "malformed_rate": 0.03363, "truncated_rate": 0.33065},
+    {"step": 9,  "seconds": 1241.507,"sec_per_trajectory": 5.006, "new_tokens": 1310687, "tok_per_sec": 1055.72, "zero_var_rate": 0.9677, "reward_mean": 0.1573, "pass_rate": 0.1573, "turns_mean": 16.851, "tool_calls_mean": 5.798,  "malformed_rate": 0.04138, "truncated_rate": 0.35887},
+    {"step": 10, "seconds": 1023.813,"sec_per_trajectory": 4.128, "new_tokens": 1068616, "tok_per_sec": 1043.76, "zero_var_rate": 0.9032, "reward_mean": 0.1653, "pass_rate": 0.1653, "turns_mean": 15.738, "tool_calls_mean": 7.032,  "malformed_rate": 0.02818, "truncated_rate": 0.32661},
+    {"step": 11, "seconds": 1242.291,"sec_per_trajectory": 5.009, "new_tokens": 1353727, "tok_per_sec": 1089.70, "zero_var_rate": 0.9677, "reward_mean": 0.1653, "pass_rate": 0.1653, "turns_mean": 16.008, "tool_calls_mean": 5.040,  "malformed_rate": 0.02630, "truncated_rate": 0.35081},
+    {"step": 12, "seconds": 1358.600,"sec_per_trajectory": 5.478, "new_tokens": 1483000, "tok_per_sec": 1091.57, "zero_var_rate": 1.0000, "reward_mean": 0.1613, "pass_rate": 0.1613, "turns_mean": 16.335, "tool_calls_mean": 4.335,  "malformed_rate": 0.02438, "truncated_rate": 0.30242},
+    {"step": 13, "seconds": 1396.094,"sec_per_trajectory": 5.629, "new_tokens": 1527322, "tok_per_sec": 1094.00, "zero_var_rate": 0.9677, "reward_mean": 0.1653, "pass_rate": 0.1653, "turns_mean": 17.052, "tool_calls_mean": 4.435,  "malformed_rate": 0.02112, "truncated_rate": 0.32661},
+    {"step": 14, "seconds": 1668.959,"sec_per_trajectory": 6.730, "new_tokens": 1846257, "tok_per_sec": 1106.23, "zero_var_rate": 0.9355, "reward_mean": 0.1290, "pass_rate": 0.1290, "turns_mean": 18.452, "tool_calls_mean": 3.972,  "malformed_rate": 0.00599, "truncated_rate": 0.27419},
+    {"step": 15, "seconds": 1636.175,"sec_per_trajectory": 6.597, "new_tokens": 1813004, "tok_per_sec": 1108.07, "zero_var_rate": 0.9355, "reward_mean": 0.1250, "pass_rate": 0.1250, "turns_mean": 18.222, "tool_calls_mean": 3.903,  "malformed_rate": 0.00656, "truncated_rate": 0.29839},
+    {"step": 16, "seconds": 1619.403,"sec_per_trajectory": 6.530, "new_tokens": 1799874, "tok_per_sec": 1111.44, "zero_var_rate": 0.9355, "reward_mean": 0.1613, "pass_rate": 0.1613, "turns_mean": 18.274, "tool_calls_mean": 3.746,  "malformed_rate": 0.01242, "truncated_rate": 0.23387},
+    {"step": 17, "seconds": 1628.164,"sec_per_trajectory": 6.565, "new_tokens": 1832402, "tok_per_sec": 1125.44, "zero_var_rate": 0.9677, "reward_mean": 0.1653, "pass_rate": 0.1653, "turns_mean": 18.593, "tool_calls_mean": 4.085,  "malformed_rate": 0.00807, "truncated_rate": 0.31855},
+    {"step": 18, "seconds": 1659.540,"sec_per_trajectory": 6.692, "new_tokens": 1861230, "tok_per_sec": 1121.53, "zero_var_rate": 0.9355, "reward_mean": 0.1573, "pass_rate": 0.1573, "turns_mean": 18.730, "tool_calls_mean": 3.790,  "malformed_rate": 0.00845, "truncated_rate": 0.27016},
+    {"step": 19, "seconds": 1635.828,"sec_per_trajectory": 6.596, "new_tokens": 1820087, "tok_per_sec": 1112.64, "zero_var_rate": 0.9677, "reward_mean": 0.1532, "pass_rate": 0.1532, "turns_mean": 18.556, "tool_calls_mean": 3.960,  "malformed_rate": 0.00543, "truncated_rate": 0.30242},
+    {"step": 20, "seconds": 1537.476,"sec_per_trajectory": 6.200, "new_tokens": 1739343, "tok_per_sec": 1131.30, "zero_var_rate": 0.9677, "reward_mean": 0.1532, "pass_rate": 0.1532, "turns_mean": 18.060, "tool_calls_mean": 4.077,  "malformed_rate": 0.00909, "truncated_rate": 0.32258},
+    {"step": 21, "seconds": 1576.622,"sec_per_trajectory": 6.357, "new_tokens": 1784547, "tok_per_sec": 1131.88, "zero_var_rate": 0.9677, "reward_mean": 0.1492, "pass_rate": 0.1492, "turns_mean": 18.565, "tool_calls_mean": 4.089,  "malformed_rate": 0.00585, "truncated_rate": 0.27823}
+  ],
+  "_gold_reference": {
+    "_note": "gold 真实成功轨迹的工具调用分布（来自 τ-bench historical_trajectories，268 条 airline 成功轨迹）",
+    "tool_calls_median": 6,
+    "tool_calls_mean": 7.1
+  },
+  "_sft_start": {
+    "_note": "GRPO 起点 = SFT 10ep adapter 的 rollout 指标（probe3，2026-09-18 实测）",
+    "zero_var_rate": 0.742,
+    "pass_rate": 0.137,
+    "tool_calls_mean": 14.94,
+    "truncated_rate": 0.218
+  }
+}
