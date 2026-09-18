@@ -17,7 +17,14 @@ GRPO 的目标函数 —— **本项目的核心命题就写在这个文件里**
 ② **advantage 是按「整条轨迹」广播到每个 token 上的**
    本项目的奖励是**结果奖励**（数据库改没改对），不是过程奖励。
    所以一条轨迹里每个 token 拿同一个 A_i。
-   （过程奖励 = 真 PRM，longhorizon 已证明 rule-based PRM-Lite 反而更差，本项目不做）
+   （过程奖励 = 真 PRM。**2026-09-18 更正**：这行原先写的是
+     "longhorizon 已证明 rule-based PRM-Lite 反而更差，本项目不做" —— **那个判读是错的**。
+     参考实现 README 的真实数字：vanilla 0.125 ｜ PRM-Lite 单独 **0.140** ｜
+     LATA 单独 0.185 ｜ **两者联合 0.240**。PRM-Lite 单独用**比 vanilla 好**，
+     它的毛病是"单独用收益小"，不是"更差"。
+     参考实现的原话是 **"Neither works well in isolation"** —— 价值在**信号传递**：
+     PRM 产生局部信号，LATA 的 √L 提供传输通道。
+     本项目目前两者都没做；LATA 已在下方 `grpo_loss(length_norm=)` 留了开关。）
 
 ③ **KL 用 low_var_kl**（`exp(Δ) − Δ − 1`），和 longhorizon 的配置对齐（coef 0.01）。
    它是无偏的且恒 ≥ 0，比 `Δ` 那个形式数值稳。
@@ -92,6 +99,7 @@ def grpo_loss(
     ref_logp: Optional[torch.Tensor] = None,
     clip_eps: float = 0.2,
     kl_coef: float = 0.0,
+    length_norm: str = "mean",        # "mean" = ÷L（原版）｜ "lata" = ÷√L
 ) -> tuple[torch.Tensor, dict]:
     """
     GRPO 损失。
@@ -116,7 +124,16 @@ def grpo_loss(
 
     surr1 = ratio * adv
     surr2 = torch.clamp(ratio, 1.0 - clip_eps, 1.0 + clip_eps) * adv
-    pg = -(torch.min(surr1, surr2) * m).sum() / m.sum().clamp(min=1.0)
+
+    # ⭐ 长度归一化 —— **LATA 就落在这一行**。
+    n_tok = m.sum().clamp(min=1.0)
+    #   "mean" ÷L（原版）：长轨迹的每 token 梯度按 1/L 衰减，
+    #     参考实现的原话是这等于在训练模型"trade quantity for quality"——
+    #     学成"说短话 + 频繁试错"，第 150 步后崩。**这正是我们担心的事。**
+    #   "lata" ÷√L：长度涨 4 倍时每 token 梯度只减半（而非四分之一），
+    #     保住"多轮推理"的边际激励。参考实现实测 vanilla 0.125 → LATA 单独 0.185。
+    denom = n_tok.sqrt() if length_norm == "lata" else n_tok
+    pg = -(torch.min(surr1, surr2) * m).sum() / denom
 
     # ⚠️ 记统计数字必须 no_grad —— 否则 PyTorch 会警告
     #    "Converting a tensor with requires_grad=True to a scalar"

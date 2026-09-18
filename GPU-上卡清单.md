@@ -261,6 +261,34 @@ SFT 的作用是把通过率抬到"有的对有的错"的区间里，GRPO 才有
 - **< 5% → 立刻降到 easy 档，不要头铁**（降级链见 README）
 - \> 50% → 题太简单了，GRPO 会组内全对，同样是白跑
 
+#### 5.1b 判据怎么量 ⭐（2026-09-18 新增，**别跳过这步**）
+
+判据有入口了 —— `scripts/eval_sft_gate.py`。**SFT 前后各跑一次**：
+
+```bash
+# ① 先看要花多少钱（零成本，建议每次都先 --dry-run）
+python scripts/eval_sft_gate.py --dry-run
+
+# ② SFT 之前：量基座，拿到 before
+python scripts/eval_sft_gate.py --model "$TOOLHORIZON_TOKENIZER" \
+    --out reports/sft_gate_base.json
+
+# ③ SFT 之后：量 adapter，拿到 after + 自动判 [15%, 50%]
+python scripts/eval_sft_gate.py --model "$TOOLHORIZON_TOKENIZER" \
+    --adapter models/adapter_sft --out reports/sft_gate_sft.json
+```
+
+每次约 **10 分钟 / ¥0.3**（30 题 × 4 条 = 120 条轨迹）。
+**两次相减才是 SFT 的增量** —— 只量 after 的话，"SFT 有没有用"这个问题答不了。
+
+**为什么必须有这一步**：在它之前，`observe/harness.py` **只有 `--mock` 模式**，
+拿真 adapter 算不出 pass@1。也就是 —— 跑完 SFT 不知道该不该往下跑 GRPO，
+只能瞎猜。猜错的代价是那次 12 GPU 时的 GRPO 白烧。
+
+⚠️ **统计噪声（别把这个数当定论）**：30 道题时，pass@1 的 95% 区间宽约 **0.31**，
+而判据带本身只有 0.35 宽。所以 —— **落在边界上的值（0.14 / 0.16）不算结论**，
+脚本会自己提示"区间跨过了判据边界"，那时候加 `--limit 60` 重测。
+
 ### 5.2 Stage 2 · GRPO 主训练
 
 ```bash

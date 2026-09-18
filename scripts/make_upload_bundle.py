@@ -31,7 +31,7 @@ OUT = PROJECT / "dist" / "toolhorizon_upload.tar.gz"
 
 INCLUDE_DIRS = ["env", "train", "observe", "scripts", "data"]
 INCLUDE_FILES = ["requirements.txt", "README.md", "smoke-test-清单.md",
-                 "GPU-上卡清单.md", "AutoDL租卡步骤.md"]
+                 "GPU-上卡清单.md", "AutoDL租卡步骤.md", "今天做什么.md"]
 
 SKIP_PATTERNS = ("__pycache__", ".pyc", ".pyo", "runs", "dist")
 
@@ -86,10 +86,19 @@ def main() -> int:
     size_mb = OUT.stat().st_size / 1024 ** 2
     print(f"\n→ {OUT}")
     print(f"  {n_files} 个文件，压缩后 {size_mb:.1f} MB")
-    print(f"\n上卡三步：")
-    print(f"  1. 传上去：  scp {OUT.name} root@<机器>:~/")
-    print(f"  2. 解开：    tar xzf {OUT.name} && cd ToolHorizon")
-    print(f"  3. 跑烟雾：  python scripts/gpu_smoke.py --n 5")
+    print(f"\n上卡步骤（烟雾测试 2026-09-17 已跑过，下面是接着跑的）：")
+    print(f"  0. 传上去：  scp {OUT.name} root@<机器>:~/   →   tar xzf   →   cd ToolHorizon")
+    print(f"  1. 恢复环境：source scripts/env.sh")
+    print(f"  2. 量基座：  python scripts/eval_sft_gate.py --dry-run          # 先看要花多少钱")
+    print(f"               python scripts/eval_sft_gate.py \\")
+    print(f"                   --model \"$TOOLHORIZON_TOKENIZER\" --out reports/sft_gate_base.json")
+    print(f"  3. SFT 预热：python -m train.trainer sft --model \"$TOOLHORIZON_TOKENIZER\" \\")
+    print(f"                   --sft-data data/sft_final.jsonl --out models/adapter_sft")
+    print(f"  4. 验判据：  python scripts/eval_sft_gate.py \\")
+    print(f"                   --model \"$TOOLHORIZON_TOKENIZER\" --adapter models/adapter_sft \\")
+    print(f"                   --out reports/sft_gate_sft.json")
+    print(f"  5. 彩排一轮：python -m train.run --rounds 1 --select train --n 8 --limit 4 \\")
+    print(f"                   --model \"$TOOLHORIZON_TOKENIZER\" --run-name rehearsal")
     return 0
 
 

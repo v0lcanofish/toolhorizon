@@ -201,7 +201,14 @@ def render(results: Dict[str, SplitResult]) -> str:
          "-" * 96]
     for name in SPLITS:
         r = results.get(name)
-        if r is None or r.n_tasks == 0:
+        # ⚠️ "没跑这个分片" 和 "这个分片真的没题" 是两件事，**不能用同一句话**。
+        #    2026-09-18 实测踩过：eval_sft_gate 只跑 gate 分片时，
+        #    covered 会显示成"扩题集里没有符合条件的题" —— 而 covered 是 31 道训练原题，
+        #    根本不来自扩题集。**这句话是错的，而且不报错**，正是本项目一直在治的"静默失真"。
+        if r is None:
+            L.append(f"{name:<11} {'—':>4}   （本次未运行这个分片）")
+            continue
+        if r.n_tasks == 0:
             L.append(f"{name:<11} {'—':>4}   （空分片：扩题集里没有符合条件的题）")
             continue
         L.append(f"{name:<11} {r.n_tasks:>4} {r.n_samples:>6} "

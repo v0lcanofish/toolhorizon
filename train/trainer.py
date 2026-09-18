@@ -119,6 +119,7 @@ def grpo_step(
     ref_model=None,
     kl_coef: float = 0.0,
     chunk_size: int = 256,
+    length_norm: str = "mean",
 ):
     """
     Stage 2：GRPO。
@@ -137,7 +138,8 @@ def grpo_step(
 
     adv = torch.tensor([advantage], dtype=torch.float32, device=logp.device)
     return grpo_loss(logp, loss_mask, adv, old_logp=None,
-                     ref_logp=ref_logp, kl_coef=kl_coef)
+                     ref_logp=ref_logp, kl_coef=kl_coef,
+                     length_norm=length_norm)
 
 
 # ---------------------------------------------------------------- IO
@@ -232,6 +234,28 @@ def selftest() -> int:
     check(abs(neg.item() - 1.0) < 1e-6,
           f"L(A=−1) 精确等于 +1（实测 {neg.item():.8f}）→ 梯度方向真的跟着 A 走")
 
+    # ---------------- ③b ⭐ LATA：长度归一化 ÷√L，比值有闭式解
+    print("\n③b ⭐ LATA 长度归一化（参考实现：vanilla 0.125 → LATA 单独 0.185）")
+    # pg_mean = −S/n，pg_lata = −S/√n  →  pg_lata / pg_mean = √n  **精确相等**
+    # 不靠"感觉变大了"判断，直接对账 —— 这个比值一旦不是 √n，就是写错了。
+    lat, _ = grpo_step(lora, b, advantage=1.0, length_norm="lata")
+    n_tok = b.loss_mask[:, 1:].float().sum().clamp(min=1.0)
+    want_ratio = float(n_tok.sqrt())
+
+    # ⚠️ 这里**不能比 loss 的大小** —— LATA 的 loss 量级反而更大（差 √L 倍），
+    #    因为分母从 L 变成 √L。**真正该比的是「每 token 梯度」**：
+    #      mean：每个 token 拿到 A/L     lata：每个 token 拿到 A/√L
+    #    所以每 token 梯度之比 = √L —— 这才是"长轨迹的梯度衰减得更慢"的落点。
+    g_mean = abs(lp.item()) / float(n_tok)
+    g_lata = abs(lat.item()) / float(n_tok)
+    check(abs(g_lata / g_mean - want_ratio) < 1e-4,
+          f"⭐ 每 token 梯度之比精确等于 √n = {want_ratio:.3f}",
+          f"实测 {g_lata / g_mean:.6f}（mean {g_mean:.3e} → lata {g_lata:.3e}）")
+    check(abs(lat.item() / lp.item() - want_ratio) < 1e-4,
+          f"损失比同样是 √n = {want_ratio:.3f}",
+          f"实测 {lat.item() / lp.item():.6f}。"
+          f"⚠️ LATA 的 loss **量级更大**，不是更小 —— 变的是分母不是符号")
+
     # ---------------- ④ 优化：advantage 为正时，训练会提高这批数据的 logprob
     print("\n④ 走几步之后：A>0 的样本 logprob 应当上升")
     opt = torch.optim.AdamW([p for p in lora.parameters() if p.requires_grad], lr=1e-3)
@@ -298,6 +322,21 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=str(_PROJECT / "models" / "adapter"))
     ap.add_argument("--metrics", default=str(_PROJECT / "reports" / "train_metrics.jsonl"))
     ap.add_argument("--device", default="cuda")
+    # ⭐ 2026-09-18 加的 —— SFT 训不够时不用改代码就能接着训。
+    #    由来：probe1 那轮发现 SFT 训完 3 个 epoch 后 loss 还在大幅下降
+    #    （0.566 → 0.406 → 0.269，三个 epoch 一层层往下走，没有收敛迹象），
+    #    但 epoch 数原本写死在 TrainConfig 里、命令行改不了，只能改代码。
+    ap.add_argument("--epochs", type=int, default=0,
+                    help="SFT 训几个 epoch（0 = 用配置默认 3）")
+    ap.add_argument("--lr", type=float, default=0.0,
+                    help="学习率（0 = 用配置默认：SFT 1e-4 / GRPO 5e-6）")
+    ap.add_argument("--length-norm", default="mean", choices=["mean", "lata"],
+                    help="GRPO 长度归一化：mean=÷L（原版，默认）｜ lata=÷√L")
+    # ⚠️ 必须和采样用的 --max-seq-tokens **一致**。
+    #    不一致的话：采样跑出 16384 的轨迹，训练编码时按 8192 截掉尾部，
+    #    **钱花了、数据丢了、还不报错**。2026-09-18 查出来时差点漏掉。
+    ap.add_argument("--max-seq-tokens", type=int, default=0,
+                    help="编码时的序列上限（0 = 用配置默认 8192）；**要和采样的同值**")
     args = ap.parse_args(argv)
 
     if args.mode == "selftest":
@@ -307,6 +346,15 @@ def main(argv=None) -> int:
     from train.modeling import load_model
 
     cfg = TrainConfig()
+    if args.epochs > 0:
+        cfg.sft_epochs = args.epochs
+    if args.lr > 0:
+        if args.mode == "sft":
+            cfg.sft_lr = args.lr
+        else:
+            cfg.grpo_lr = args.lr
+    if args.max_seq_tokens > 0:
+        cfg.max_seq_tokens = args.max_seq_tokens
     torch.manual_seed(cfg.seed)
     # 🔴 tokenizer 必须和模型同源 —— 否则 token id 对不上，模型看到的是乱码，
     #    但 loss 照样会降（它在拟合乱码），要到评测才发现。详见 train/tokenize.py
@@ -332,6 +380,17 @@ def main(argv=None) -> int:
     enable_grad_checkpointing(lora)
     os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
     print(f"[trainer] LoRA 可训练参数 {trainable_report(lora)['ratio_pct']}（已开梯度检查点）")
+    # ⭐ 把生效的超参打出来 —— 命令行覆盖没生效是"静默失真"的经典来源
+    if args.mode == "sft":
+        print(f"[trainer] SFT 超参：epochs={cfg.sft_epochs}  lr={cfg.sft_lr}  "
+              f"grad_accum={cfg.grad_accum}")
+    else:
+        print(f"[trainer] GRPO 超参：lr={cfg.grpo_lr}  grad_accum={cfg.grad_accum}  "
+              f"长度归一化={args.length_norm}"
+              f"{'（√L · 对应 LATA）' if args.length_norm == 'lata' else '（÷L）'}  "
+              f"max_seq_tokens={cfg.max_seq_tokens}")
+        print(f"[trainer] ⚠️ 上面这个 max_seq_tokens 必须和采样时的 --max-seq-tokens 同值，"
+              f"否则长轨迹会在编码时被静默截断")
     opt = torch.optim.AdamW([p for p in lora.parameters() if p.requires_grad],
                             lr=cfg.sft_lr if args.mode == "sft" else cfg.grpo_lr)
     lora.train()
@@ -374,7 +433,8 @@ def main(argv=None) -> int:
     for step, (b, a) in enumerate(zip(bs, advs), 1):
         b = b.to(args.device)
         opt.zero_grad()
-        loss, stats = grpo_step(lora, b, advantage=a, kl_coef=0.0)
+        loss, stats = grpo_step(lora, b, advantage=a, kl_coef=0.0,
+                                length_norm=args.length_norm)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(
             [p for p in lora.parameters() if p.requires_grad], cfg.max_grad_norm)

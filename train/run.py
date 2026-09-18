@@ -57,6 +57,11 @@ def main(argv=None) -> int:
     ap.add_argument("--run-name", default="run0")
     ap.add_argument("--engine", default="vllm", choices=["vllm", "hf"])
     ap.add_argument("--max-seq-tokens", type=int, default=8192)
+    # ⚠️ 必须在这里也加一份并**透传给 trainer** —— 否则光在 trainer 里加参数，
+    #    从 train.run 跑的时候会**静默走默认值**（命令里写 lata 也没用），
+    #    而且不报任何错。本项目反复踩的就是这个形状的坑（2026-09-18 差点又踩一次）。
+    ap.add_argument("--length-norm", default="mean", choices=["mean", "lata"],
+                    help="GRPO 长度归一化：mean=÷L（默认）｜ lata=÷√L（参考实现 0.125→0.185）")
     args = ap.parse_args(argv)
 
     run_dir = _PROJECT / "runs" / args.run_name
@@ -103,7 +108,10 @@ def main(argv=None) -> int:
         print(f"\n{'='*70}\n[run] 第 {r} 轮 —— 训练\n{'='*70}")
         cmd = [py, "-m", "train.trainer", "grpo",
                "--model", args.model, "--rollouts", str(roll),
-               "--out", str(ckpt_out)]
+               "--out", str(ckpt_out),
+               "--length-norm", args.length_norm,
+               # ⚠️ 必须把采样用的上限原样传给训练 —— 传漏了长轨迹会在编码时被静默截断
+               "--max-seq-tokens", str(args.max_seq_tokens)]
         if adapter:
             cmd += ["--adapter-in", str(adapter)]
         if sh(cmd, log_dir / f"train_{tag}.log") != 0:
