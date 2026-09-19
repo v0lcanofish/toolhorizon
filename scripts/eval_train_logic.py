@@ -18,7 +18,7 @@
 
 跑法（纯 CPU）：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/eval_train_logic.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/eval_train_logic.py
 """
 
 import json

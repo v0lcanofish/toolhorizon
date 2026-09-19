@@ -18,7 +18,7 @@ T2 · 把信号形状分析结果，变成训练/评测可执行的【分流清�
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/build_task_split.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/build_task_split.py
 """
 
 import json

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """块 H4 可视化：观测器。""
 
-跑法：D:/anaconda/python.exe scripts/make_figs_h4.py
+跑法：python3.9 scripts/make_figs_h4.py
 """
 
 import json

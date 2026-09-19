@@ -95,6 +95,9 @@ class GroupResult:
     zero_variance: bool
     episodes: List[Episode]
     samples: List[Trajectory]
+    # ⭐ 动态采样（--ds）下这是"第几遍加采"。基线路径恒为 0。
+    #    存进 jsonl 当**分组键**用 —— 见 save_rollouts 里的说明。
+    pass_idx: int = 0
 
     @property
     def mean(self) -> float:
@@ -212,6 +215,7 @@ def run_grouped_rollout(
     cfg: Optional[RolloutConfig] = None,
     tokenizer=None,
     tools: Optional[List[Dict[str, Any]]] = None,
+    pass_idx: int = 0,
 ) -> RolloutBatch:
     """
     采样一批：task_items 里每道题 × cfg.n_group 条，**同步推进**。
@@ -221,6 +225,8 @@ def run_grouped_rollout(
         engine:     策略引擎（ScriptedEngine / VLLMEngine / HFEngine 都行）
         tokenizer:  用于算 prompt token 数、判断超长；None 则加载本地那份
         tools:      工具 schema —— **必须和 SFT 用同一份**（见 train/tokenize.py 顶部）
+        pass_idx:   ⭐ 第几遍加采（`--ds` 用）。同一道题采第 2 遍时 task_id 是一样的，
+                    靠这个字段把两批隔开 —— 否则 trainer 会把它们并成一个 16 条的组。
     """
     cfg = cfg or RolloutConfig()
     tok = tokenizer or load_tokenizer()
@@ -322,10 +328,59 @@ def run_grouped_rollout(
             zero_variance=zero,
             episodes=[t.ep for t in ts],
             samples=ts,
+            pass_idx=pass_idx,
         ))
 
     groups.sort(key=lambda g: g.task_id)
     return RolloutBatch(groups=groups, gen_stats=engine.stats())
+
+
+# ---------------------------------------------------------------- 动态采样
+
+
+def run_ds_passes(
+    task_items,
+    engine,
+    cfg: Optional[RolloutConfig] = None,
+    tokenizer=None,
+    tools: Optional[List[Dict[str, Any]]] = None,
+    k: int = 0,
+    max_pass: int = 6,
+    rollout_fn=None,
+):
+    """
+    动态采样（DAPO 式）：一遍遍加采，直到攒够 k 个"有方差"的组，或跑满 max_pass 遍。
+
+    ⭐ 为什么是**加采**而不是**过滤**（本项目与 DAPO 论文的一个实质区别）：
+       本项目 GRPO 是**每条轨迹一次 optimizer.step()**，分母是**该轨迹自己的长度**
+       （trainer.py 主循环 + losses.py 里 n_tok = m.sum()，batch 恒为 1）。
+       于是零 advantage 的轨迹**本来就贡献 0 梯度、也不会稀释别人的梯度** ——
+       "把零方差组从 loss 里过滤掉"在数值上是**恒等变换**，是个空臂。
+       能真正改变结果的只有一件事：**多采出几个有方差的组**。
+
+    Args:
+        k:          目标组数；0 = 只采一遍（= 基线行为，逐字节不变）
+        max_pass:   最多几遍，到顶就用手上有的（防采样成本失控）
+        rollout_fn: 注入用 —— 自测塞一个假采样器，从而在 **CPU 上**验完这套循环
+
+    Returns:
+        (per_pass, kept, passes)
+          per_pass 每一遍的 RolloutBatch —— [0] 就是基线那一批
+          kept     攒到的有方差的组（跨遍，已带各自的 pass_idx）
+          passes   实际跑了几遍
+    """
+    fn = rollout_fn or run_grouped_rollout
+
+    first = fn(task_items, engine, cfg, tokenizer, tools, pass_idx=0)
+    per_pass = [first]
+    kept = [g for g in first.groups if not g.zero_variance]
+    passes = 1
+    while k and len(kept) < k and passes < max_pass:
+        more = fn(task_items, engine, cfg, tokenizer, tools, pass_idx=passes)
+        passes += 1
+        per_pass.append(more)
+        kept.extend(g for g in more.groups if not g.zero_variance)
+    return per_pass, kept, passes
 
 
 # ---------------------------------------------------------------- 落盘
@@ -351,6 +406,11 @@ def save_rollouts(batch: RolloutBatch, path, step: int = 0) -> int:
                 rec = {
                     "step": step,
                     "task_id": g.task_id,
+                    # ⭐ 分组键。`--ds` 会把**同一道题**加采好几遍；若 trainer 还按 task_id
+                    #    分组，两遍的 16 条会被并成一组、advantage 在错误的集合上重算 ——
+                    #    零方差的那一遍会被"洗白"成有信号。用 #p{pass_idx} 隔开。
+                    #    老 jsonl 没有这个字段 → trainer 退回 task_id（向后兼容）。
+                    "group_key": f"{g.task_id}#p{g.pass_idx}",
                     "sample_idx": s.sample_idx,
                     "reward": s.ep.reward,
                     "advantage": g.advantages[s.sample_idx],

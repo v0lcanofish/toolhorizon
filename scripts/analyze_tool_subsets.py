@@ -15,7 +15,7 @@ verify_oracle.py 的 D 组测出一个反直觉的事实：
 这个脚本把「失去区分度」量化出来，用来定工具子集。
 
 跑法：
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/analyze_tool_subsets.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/analyze_tool_subsets.py
 """
 
 import json

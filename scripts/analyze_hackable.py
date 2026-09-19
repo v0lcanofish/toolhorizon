@@ -9,7 +9,7 @@ verify_oracle.py 的 C 组测出 19/50 道题 noop 得分 1.0，其中甚至有 
 本脚本把这些题的 gold 动作按读/写拆开算，并直接测「重放 gold 到底改没改数据库」。
 
 跑法：
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/analyze_hackable.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/analyze_hackable.py
 """
 
 import json

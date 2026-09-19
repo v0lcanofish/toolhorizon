@@ -37,7 +37,7 @@ H5 的硬判据写着：
 
 本地 CPU（零模型、零 GPU，验的是**这套判据逻辑本身**）：
 
-    PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe \\
+    PYTHONIOENCODING=utf-8 python3.13 \\
         scripts/eval_sft_gate.py --self-test
 """
 

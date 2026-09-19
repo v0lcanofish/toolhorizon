@@ -10,7 +10,7 @@ T4-P 扩题器可行性探针 —— 生死判据。
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/probe_expandable.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/probe_expandable.py
 """
 
 import json

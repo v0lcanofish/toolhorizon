@@ -91,7 +91,11 @@ def batches_from_records(
     """
     by_group: Dict[Any, List[Dict[str, Any]]] = {}
     for r in records:
-        by_group.setdefault(r["task_id"], []).append(r)
+        # ⭐ 优先用 group_key（= f"{task_id}#p{pass_idx}"）。
+        #    `--ds` 会对同一道题加采多遍，按 task_id 分会把两遍并成一个 16 条的组，
+        #    于是 advantage 在错误的集合上重算 —— 零方差那一遍会被"洗白"。
+        #    基线路径/老文件没有该字段 → 退回 task_id，行为不变。
+        by_group.setdefault(r.get("group_key", r["task_id"]), []).append(r)
 
     batches, advs = [], []
     for tid, group in by_group.items():

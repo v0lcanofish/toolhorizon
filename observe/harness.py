@@ -26,7 +26,7 @@ pass@1 = 每题采 N 条，**全对才算过**（τ-bench 的通行口径，比"
 
 跑法（纯 CPU，用假策略验证 harness 本身）：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe -m observe.harness --mock
+  PYTHONIOENCODING=utf-8 python3.13 -m observe.harness --mock
 """
 
 from __future__ import annotations

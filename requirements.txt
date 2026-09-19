@@ -5,7 +5,7 @@
 #   环境 A（跑环境 / 探针 / 扩题器）  必须 Python ≥ 3.10
 #       τ-bench 用了 3.10+ 语法（envs/airline/env.py 的 match/case、
 #       model_utils 里的 `X | None` 注解），3.9 连 import 都过不去（SyntaxError）。
-#       本机用的是 D:/anaconda/envs/myenv/python.exe（3.13）
+#       本项目实测用的是 Python 3.13
 #
 #   环境 B（量 token 长度）  需要 transformers / torch
 #       只跑 scripts/token_stats.py，不需要 τ-bench

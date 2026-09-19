@@ -4,7 +4,7 @@
 
   fig7_rollout_zerovar.png
 
-跑法：D:/anaconda/python.exe scripts/make_figs_h3.py  （纯 CPU，不需要 GPU）
+跑法：python3.9 scripts/make_figs_h3.py  （纯 CPU，不需要 GPU）
 """
 
 import json

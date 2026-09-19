@@ -16,7 +16,7 @@ H2-a · 造 SFT 数据：能复用的直接复用，缺的才合成。
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/python.exe scripts/build_sft_data.py
+  PYTHONIOENCODING=utf-8 python3.9 scripts/build_sft_data.py
 """
 
 import json

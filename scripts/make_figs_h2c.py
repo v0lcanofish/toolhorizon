@@ -4,7 +4,7 @@
 
   fig6_expanded.png   800 道新题的构成 + 验证有效率
 
-跑法：D:/anaconda/python.exe scripts/make_figs_h2c.py
+跑法：python3.9 scripts/make_figs_h2c.py
 """
 
 import json

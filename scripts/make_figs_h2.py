@@ -4,7 +4,7 @@
 
   fig5_sft_data.png   115 条 SFT 轨迹的覆盖情况与构成
 
-跑法：D:/anaconda/python.exe scripts/make_figs_h2.py
+跑法：python3.9 scripts/make_figs_h2.py
 """
 
 import json

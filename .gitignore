@@ -1,0 +1,33 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# ---- 虚拟环境 ----
+.venv/
+venv/
+# ⚠️ 不能写裸的 `env/` —— 那会把本项目的 env/ 模块（**是要入库的源码**）整个吞掉。
+#    上游仓库踩过这个坑：项目代码一行没进 git。
+
+# ---- 本机路径 / 编辑器 ----
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.ipynb_checkpoints/
+
+# ---- 密钥（绝不入库）----
+.env
+.env.*
+
+# ---- 模型权重与 tokenizer（可从 HF 重新下载 / 跑 scripts/autodl_setup.sh）----
+models/
+
+# ---- 运行产物 ----
+runs/
+dist/
+*.log
+
+# ---- 临时文件（自测脚本造的中间产物）----
+data/_tmp*
+reports/_tmp*

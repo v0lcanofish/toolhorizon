@@ -11,7 +11,7 @@
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/build_user_slots.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/build_user_slots.py
 """
 
 import json

@@ -15,7 +15,7 @@
 本脚本不依赖 litellm（参考仓库只读，用桩模块注入，不改它的源码）。
 
 跑法：
-  PYTHONIOENCODING=utf-8 D:/anaconda/python.exe scripts/probe_tau_bench.py
+  PYTHONIOENCODING=utf-8 python3.9 scripts/probe_tau_bench.py
 """
 
 import sys

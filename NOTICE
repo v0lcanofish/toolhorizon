@@ -1,0 +1,56 @@
+ToolHorizon
+Copyright 2026 v0lcanofish
+
+This product includes software and data developed as part of a personal
+research project on the training stability of long-horizon, multi-tool
+agentic reinforcement learning.
+
+================================================================================
+Third-party benchmark: τ-bench
+================================================================================
+
+The agent environment, tool definitions, task set and reward/evaluation
+protocol are adapted from τ-bench:
+
+    Copyright (c) 2024 Sierra
+    MIT License — https://github.com/sierra-research/tau-bench
+
+Redistributed τ-bench-derived material in this repository:
+
+  data/sft_seed.jsonl
+  data/sft_final.jsonl     Agent trajectories taken from τ-bench's published
+                           historical_trajectories (the τ-bench authors
+                           generated these with gpt-4o and Claude; each record
+                           keeps its `source` field). Replayed and re-rendered
+                           by scripts/build_sft_data.py + scripts/synth_sft_data.py.
+
+  data/tasks_expanded.json Programmatically expanded tasks, derived from the
+                           τ-bench airline task/user records by
+                           scripts/expand_tasks.py.
+
+  data/user_slots.json     User-simulator slot table, derived from the τ-bench
+                           airline user records by scripts/build_user_slots.py.
+
+The τ-bench source tree itself is NOT vendored here. scripts/env.sh resolves it
+at runtime through a four-level fallback (env var / sibling directory / vendor
+directory / original layout) — see scripts/env.sh and docs/.
+
+================================================================================
+Base model
+================================================================================
+
+  Qwen2.5-1.5B-Instruct — Alibaba Cloud, Apache License 2.0.
+
+Model weights and the tokenizer are NOT redistributed in this repository.
+scripts/autodl_setup.sh downloads them at setup time. (A tokenizer copy used
+locally for token-length measurement lives under models/ and is git-ignored.)
+
+================================================================================
+Reference implementation — NOT redistributed
+================================================================================
+
+This project's research question is positioned against the published findings
+of "agentic-grpo-longhorizon" (long-horizon multi-tool agentic RL, including
+the LATA length-normalisation scheme). That repository was used READ-ONLY as a
+local reference for comparison; it carries no license file, and none of its
+source or data is included in this repository.

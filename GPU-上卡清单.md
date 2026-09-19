@@ -120,7 +120,7 @@ tmux ls                    # 看有哪些会话
 本地先打包（在 `代码库/projects/ToolHorizon` 下）：
 
 ```bash
-D:/anaconda/envs/myenv/python.exe scripts/make_upload_bundle.py
+python3.13 scripts/make_upload_bundle.py
 # → dist/toolhorizon_upload.tar.gz   164 个文件 / 1.4 MB
 ```
 

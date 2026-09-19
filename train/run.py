@@ -62,6 +62,11 @@ def main(argv=None) -> int:
     #    而且不报任何错。本项目反复踩的就是这个形状的坑（2026-09-18 差点又踩一次）。
     ap.add_argument("--length-norm", default="mean", choices=["mean", "lata"],
                     help="GRPO 长度归一化：mean=÷L（默认）｜ lata=÷√L（参考实现 0.125→0.185）")
+    # ⭐ 四臂消融的另一根轴。同样必须**在这里加一份并透传给 collect** ——
+    #    只在 collect 里加参数的话，从 train.run 跑的时候写 --ds 也没用、还不报错。
+    ap.add_argument("--ds", type=int, default=0,
+                    help="动态采样：加采直到攒够 K 个有方差的组（0=关，=基线行为）")
+    ap.add_argument("--ds-max-pass", type=int, default=6)
     args = ap.parse_args(argv)
 
     run_dir = _PROJECT / "runs" / args.run_name
@@ -93,6 +98,8 @@ def main(argv=None) -> int:
                "--out", str(roll)]
         if args.limit:
             cmd += ["--limit", str(args.limit)]
+        if args.ds:
+            cmd += ["--ds", str(args.ds), "--ds-max-pass", str(args.ds_max_pass)]
         if adapter:
             cmd += ["--adapter", str(adapter)]
         if sh(cmd, log_dir / f"collect_{tag}.log") != 0:

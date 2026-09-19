@@ -6,7 +6,7 @@
   fig2_expand_space.png   扩题器的组合空间 vs 目标
   fig3_token_dist.png     真实轨迹 token 分布 + 构成
 
-跑法：D:/anaconda/python.exe scripts/make_figs_h1.py   （需要 matplotlib）
+跑法：python3.9 scripts/make_figs_h1.py   （需要 matplotlib）
 """
 
 import json

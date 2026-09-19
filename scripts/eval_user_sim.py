@@ -18,7 +18,7 @@
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/eval_user_sim.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/eval_user_sim.py
 """
 
 import json

@@ -71,8 +71,11 @@ def main() -> int:
     print(f"   SFT 起点（GRPO 之前）      {pct(sft.get('zero_var_rate', float('nan')))}")
     print(f"   前 3 轮                    {pct(avg(head, 'zero_var_rate'))}")
     print(f"   后 8 轮（稳态）            {pct(avg(tail, 'zero_var_rate'))}")
-    peak = max(S, key=lambda s: s["zero_var_rate"])
-    print(f"   峰值                       {pct(peak['zero_var_rate'])}（step {peak['step']}）")
+    # ⚠️ 别用 max(S, key=...) —— 它只返回**第一个**峰值，step 23 那次 1.000 会被吞掉，
+    #    于是脚本打印"step 12"、报告写"出现两次"，两处数字对不上（口径不一致）。
+    vmax = max(s["zero_var_rate"] for s in S)
+    peaks = [s["step"] for s in S if s["zero_var_rate"] >= vmax - 1e-9]
+    print(f"   峰值                       {pct(vmax)}（step {', '.join(map(str, peaks))}，共 {len(peaks)} 次）")
     print("   ⇒ 训练**没有**把零方差压下去，反而把它推高了。")
 
     print("\n" + "=" * 96)

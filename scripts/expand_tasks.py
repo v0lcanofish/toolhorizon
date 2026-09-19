@@ -19,7 +19,7 @@ H2-c · 扩题器 —— 程序化造新题。
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/expand_tasks.py --n 200
+  PYTHONIOENCODING=utf-8 python3.13 scripts/expand_tasks.py --n 200
 """
 
 import argparse

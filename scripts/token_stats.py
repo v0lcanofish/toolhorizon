@@ -12,7 +12,7 @@ T8 · 真实轨迹的 token 长度分布实测（Stage 0 出口判据之一）�
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/python.exe scripts/token_stats.py
+  PYTHONIOENCODING=utf-8 python3.9 scripts/token_stats.py
 """
 
 import json

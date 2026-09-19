@@ -9,7 +9,7 @@ Stage 0 出口判据之一：gold 重放 oracle 必须得 reward = 1.0。
 
 跑法：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/verify_oracle.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/verify_oracle.py
 """
 
 import json

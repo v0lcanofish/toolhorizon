@@ -9,7 +9,7 @@
 这个脚本只做一件事：把两份任务定义逐题对齐，看差异在哪。
 
 跑法：
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/probe_tasks_compare.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/probe_tasks_compare.py
 """
 
 import sys

@@ -50,16 +50,78 @@ def load(path: Path):
     return rows
 
 
+def load_read_only_tools() -> set:
+    """
+    只读工具清单 —— **从 data/hackable_analysis.json 读，不写死**。
+
+    写死的话，哪天工具集改了（12/14 个那两个版本），这里的"读/写"分类会静默错位，
+    而输出看起来完全正常。拿不到就返回空集并**吵一声**（那样所有工具都会被算成"写"，
+    结论会反过来 —— 必须让人看见）。
+    """
+    p = _PROJECT / "data" / "hackable_analysis.json"
+    try:
+        return set(json.loads(p.read_text(encoding="utf-8"))["read_only_tools"])
+    except Exception as e:                                    # noqa: BLE001
+        print(f"   ⚠️ 读不到只读工具清单（{p.name}: {e}）——")
+        print("      下面所有工具都会被算成『写工具』，结论方向可能反。别照抄这一节。")
+        return set()
+
+
+def tool_calls_of(rec) -> list:
+    """从一条轨迹的 messages 里取出所有工具调用名（顺序保留）。"""
+    out = []
+    for m in rec.get("messages") or []:
+        for tc in (m.get("tool_calls") or []):
+            out.append(tc.get("function", {}).get("name", "?"))
+    return out
+
+
+def resolve_s_max(rollout_path: Path, cli: int = 0) -> int:
+    """
+    取**这一轮真正用的** S_max，优先从旁边的 summary.json 读。
+
+    ⚠️ 为什么不能写死：这里原本硬编码 8192，而 9/18 那轮用的是 16384 ——
+       于是"截断是不是撞 token 预算"会被算错（prompt ≥ 0.9×S_max 的比例虚高）。
+       这就是"写死的数字 + 分析脚本 = 数字口径不一致"那个形状。
+       真值拿不到就**明说这是假设值**，不静默用一个错的数。
+    """
+    if cli:
+        print(f"   （S_max = {cli}，由 --s-max 指定）")
+        return cli
+    summ = rollout_path.with_suffix(".summary.json")
+    if summ.exists():
+        try:
+            v = json.loads(summ.read_text(encoding="utf-8")).get("max_seq_tokens")
+            if v:
+                print(f"   （S_max = {v}，取自 {summ.name}）")
+                return int(v)
+        except Exception:
+            pass
+    print("   ⚠️ 旁边 summary.json 里没有 max_seq_tokens，**按 8192 假设** ——")
+    print("      这一轮的截断诊断可能不准；请用 `--s-max <实际值>` 显式传入。")
+    return 8192
+
+
 def bar(frac: float, width: int = 28) -> str:
     n = int(round(frac * width))
     return "█" * n + "·" * (width - n)
 
 
 def main(argv=None) -> int:
-    argv = argv if argv is not None else sys.argv[1:]
+    argv = list(argv if argv is not None else sys.argv[1:])
     if argv and argv[0] in ("-h", "--help"):
         print(__doc__)
         return 0
+    # 顺手挑出 --s-max（这个脚本原本是纯位置参数的用法，不动它）
+    s_max_cli, rest, i = 0, [], 0
+    while i < len(argv):
+        a = argv[i]
+        if a == "--s-max" and i + 1 < len(argv):
+            s_max_cli = int(argv[i + 1]); i += 2; continue
+        if a.startswith("--s-max="):
+            s_max_cli = int(a.split("=", 1)[1]); i += 1; continue
+        rest.append(a); i += 1
+    argv = rest
     path = Path(argv[0]).resolve() if argv else pick_latest()
 
     # ⚠️ 相对路径直接 relative_to 会抛 ValueError —— 而命令行传的就是相对路径
@@ -102,7 +164,7 @@ def main(argv=None) -> int:
 
     # ---------------------------------------------------------------- ③ 诊断
     print("\n③ 诊断：撞的是轮数上限还是 token 预算？\n")
-    S_MAX = 8192
+    S_MAX = resolve_s_max(path)
     trunc = [r for r in rows if r["terminated_by"] in TRUNCATED]
     if not trunc:
         print("   没有被截断的轨迹 —— 零方差率不是截断造成的，得往别处找原因")
@@ -167,6 +229,92 @@ def main(argv=None) -> int:
                          if r["terminated_by"] in TRUNCATED})
     print(f"\n   截断波及 {n_trunc_tasks}/{len(by_task)} 道题"
           f"（平均每题 {len(trunc) / max(1, n_trunc_tasks):.1f} 条）")
+
+    # ══════════════════════════════════════════════════════════════════
+    # ⑦⑧⑨ 工具行为解剖
+    #
+    # ⭐ 为什么必须有这三节：光看 tool_calls_mean 一个数，**分不清**
+    #    「学会了少调工具」和「放弃尝试 / 空转」—— 而这两件事的含义完全相反。
+    #    H6 报告里那条保留意见（gold 7.1 是成功轨迹的统计，我们 pass 只有 15%）
+    #    就是冲这个来的，这三节是它的解药。
+    # ══════════════════════════════════════════════════════════════════
+
+    ok_rows = [r for r in rows if r["reward"] >= 1.0 - 1e-9]
+    bad_rows = [r for r in rows if r["reward"] < 1.0 - 1e-9]
+
+    print("\n⑦ 工具调用 **按结局拆**（同一策略、同一分布下比 —— 修掉取样偏差）\n")
+    print("   ⚠️ gold 的 7.1 是**成功轨迹**的统计。我们 pass_rate 才 ~15%，")
+    print("      拿失败轨迹去比它本身有偏。正确的对照是下面这两行之比。\n")
+    _mean = lambda rs, k: (st.mean([r[k] for r in rs]) if rs else float("nan"))
+    print(f"   {'':<8}{'条数':>6}{'工具调用':>10}{'轮数':>8}{'截断率':>9}{'格式崩':>9}")
+    for label, rs in (("成功", ok_rows), ("失败", bad_rows)):
+        if not rs:
+            print(f"   {label:<8}{0:>6}   —— 这一轮没有{label}轨迹")
+            continue
+        tr = sum(1 for r in rs if r["terminated_by"] in TRUNCATED) / len(rs)
+        print(f"   {label:<8}{len(rs):>6}{_mean(rs,'n_tool_calls'):>10.2f}"
+              f"{_mean(rs,'n_turns'):>8.1f}{tr:>9.1%}{_mean(rs,'n_malformed'):>9.2f}")
+    if ok_rows and bad_rows:
+        d = _mean(ok_rows, "n_tool_calls") - _mean(bad_rows, "n_tool_calls")
+        verdict = ("成功轨迹**调得更多** → 少调不是「学会做对」的路径"
+                   if d > 0.5 else
+                   "成功轨迹**调得更少** → 与「欠调用 = 在学正确行为」一致" if d < -0.5 else
+                   "两者**基本持平** → 总 tool_calls 下降**不能**归因于「成功需要少调」")
+        print(f"\n   ⇒ 成功 − 失败 = {d:+.2f} ｜ {verdict}")
+        print("      ⭐ 这一行才是「欠调用」这个说法成不成立的判据。")
+
+    # ---------------- ⑧ 读工具 vs 写工具
+    print("\n⑧ 掉的是**读**工具还是**写**工具？\n")
+    READ_ONLY = load_read_only_tools()
+    per_tool, per_tool_ok, per_tool_bad = Counter(), Counter(), Counter()
+    for r in rows:
+        names = tool_calls_of(r)
+        per_tool.update(names)
+        # ⚠️ 别写成 `r in ok_rows` —— 那是按 dict **相等**判断，两条内容相同的轨迹会串。
+        if r["reward"] >= 1.0 - 1e-9:
+            per_tool_ok.update(names)
+        else:
+            per_tool_bad.update(names)
+    if READ_ONLY:
+        rd = sum(v for k, v in per_tool.items() if k in READ_ONLY)
+        wr = sum(v for k, v in per_tool.items() if k not in READ_ONLY)
+        tot = max(1, rd + wr)
+        print(f"   读工具 {rd:>6}（{rd/tot:5.1%}）｜ 写工具 {wr:>6}（{wr/tot:5.1%}）")
+        print(f"   {'':<26}{'读':>8}{'写':>8}")
+        for label, cnt in (("成功轨迹", per_tool_ok), ("失败轨迹", per_tool_bad)):
+            a = sum(v for k, v in cnt.items() if k in READ_ONLY)
+            b = sum(v for k, v in cnt.items() if k not in READ_ONLY)
+            print(f"   {label:<26}{a:>8}{b:>8}")
+        print("\n   ⇒ 若**写**工具掉得比读工具狠 → 更像『学会不动手』（可能是题目结构喂出来的）；")
+        print("     读**写**一起掉 → 更像整体退化 / 空转。")
+        print(f"\n   逐工具计数：{dict(per_tool.most_common())}")
+
+    # ---------------- ⑨ 不调工具的那些 turn 在干什么
+    print("\n⑨ **不调工具的 assistant turn** 在干什么？（决定叫『欠调用』还是『空转』）\n")
+    text_turns, n_tool_turns, empty_turns = [], 0, 0
+    for r in rows:
+        for m in r.get("messages") or []:
+            if m.get("role") != "assistant":
+                continue
+            if m.get("tool_calls"):
+                n_tool_turns += 1
+            else:
+                c = (m.get("content") or "").strip()
+                text_turns.append(len(c))
+                if len(c) <= 5:                 # 空的 / 只有标点 = 没说话也没做事
+                    empty_turns += 1
+    n_text = len(text_turns)
+    print(f"   assistant turn 总数 {n_text + n_tool_turns}"
+          f" ｜ 带工具调用 {n_tool_turns} ｜ **不带工具调用 {n_text}**")
+    if n_text:
+        print(f"   其中近乎空的（≤5 字符）{empty_turns}（{empty_turns/n_text:.1%}）")
+        print(f"   文本长度：均值 {st.mean(text_turns):.0f} 字符 ｜ 中位 {st.median(text_turns):.0f}"
+              f" ｜ p90 {sorted(text_turns)[int(0.9*(n_text-1))]} ｜ 最大 {max(text_turns)}")
+        print(f"   这些 turn 贡献的字符总量 {sum(text_turns):,}")
+        verdict = ("**输出很啰嗦** → 是『少做事、多说话』，不是少做事"
+                   if st.median(text_turns) > 200 else
+                   "**输出很短** → 更像空转 / 复读，不是有效推理")
+        print(f"\n   ⇒ {verdict}")
 
     print("\n" + "=" * 78)
     print("下一步怎么定：")

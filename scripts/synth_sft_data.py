@@ -17,7 +17,7 @@ H2-b · 合成缺失的轨迹（训练集里那 7 道没有真实轨迹的题）
 
 跑法（必须用 myenv，要 τ-bench）：
   cd 代码库/projects/ToolHorizon
-  PYTHONIOENCODING=utf-8 D:/anaconda/envs/myenv/python.exe scripts/synth_sft_data.py
+  PYTHONIOENCODING=utf-8 python3.13 scripts/synth_sft_data.py
 """
 
 import json

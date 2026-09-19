@@ -162,7 +162,7 @@ O 类（19 道，38%）：不做   → +1 ；乱做 → 0     →  教"别乱动
 ### 环境（踩坑，已固化进 `env/bootstrap.py`）
 
 - **Python 3.9 跑不了**：`envs/airline/env.py:22` 的 `match` 是 3.10+ 语法，连 import 都过不去
-  → 统一用 `D:/anaconda/envs/myenv/python.exe`（3.13 + pydantic 2.13.5）
+  → 统一用同一个 **Python ≥ 3.10** 的环境（本项目实测 3.13 + pydantic 2.13.5）
 - **litellm**：`envs/user.py:5` 顶层 import，用 `sys.modules` **注入桩**（参考仓库保持只读，未改一行）
 - **`load_user` 写死**在 `base.py:74` → 猴补丁
 - **`reset()` off-by-one**：`random.randint(0, len(tasks))` 会 IndexError → 永远显式传 `task_index`
@@ -526,7 +526,7 @@ S_max 8192 → 4096
 **Stage 0 出口（全 CPU，租卡前）** ⚠️ **解释器必须是 3.10+**（3.9 跑不了 τ-bench）：
 ```bash
 cd 代码库/projects/ToolHorizon
-PY="D:/anaconda/envs/myenv/python.exe"
+PY="python3.13"
 
 # ★ 已跑通（2026-09-15）：gold 重放 oracle
 PYTHONIOENCODING=utf-8 $PY scripts/verify_oracle.py

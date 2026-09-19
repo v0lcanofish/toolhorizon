@@ -108,9 +108,17 @@ def main(argv=None) -> int:
     ap.add_argument("--gpu-mem", type=float, default=0.85)
     ap.add_argument("--engine", default="vllm", choices=["vllm", "hf"])
     ap.add_argument("--out", required=True)
+    # ⭐ 动态采样（DAPO 式）。0 = 关，行为与以前**逐字节相同**（不筛不滤，全存）。
+    ap.add_argument("--ds", type=int, default=0,
+                    help="加采直到攒够 K 个『有方差』的组（0 = 关）。"
+                         "只影响**加采与保留**，不改任何一条轨迹的 advantage")
+    ap.add_argument("--ds-max-pass", type=int, default=6,
+                    help="最多加采几遍，到顶就用手上有的（防采样成本失控）")
     args = ap.parse_args(argv)
 
-    from train.rollout_batch import RolloutConfig, run_grouped_rollout, save_rollouts
+    from train.rollout_batch import (
+        RolloutBatch, RolloutConfig, run_ds_passes, save_rollouts,
+    )
     from train.tokenize import load_tokenizer, tool_schemas
 
     # 🔴 tokenizer 必须和模型同源（本地那份词表 151,665 ≠ Qwen2.5 的 151,936）
@@ -143,20 +151,49 @@ def main(argv=None) -> int:
         n_group=args.n, max_turns=args.max_turns,
         max_seq_tokens=args.max_seq_tokens,
     )
+    # 动态采样：--ds 0 = 只采一遍（基线，逐字节不变）；--ds K = 加采到攒够 K 个有方差的组
     t1 = time.time()
-    batch = run_grouped_rollout(items, engine, cfg, tok, tools)
+    per_pass, kept, passes = run_ds_passes(
+        items, engine, cfg, tok, tools, k=args.ds, max_pass=args.ds_max_pass)
     dt = time.time() - t1
 
-    n = save_rollouts(batch, args.out, step=0)
-    s = batch.summary()
+    batch = per_pass[0]                                      # 第一遍 = 基线口径
+    pass0_groups = len(batch.groups)
+    sampled = [g for b in per_pass for g in b.groups]        # 采到的一切（含弃用的）
+
+    # ⚠️ ds=0 时**原样全存**，一条不筛 —— 保证与已有 25 轮 run 的 summary 逐字段可比，
+    #    也让"关掉 DS"真正等于基线，而不是偷偷变成"只存有方差的组"。
+    train_groups = kept if args.ds else sampled
+    if args.ds and len(kept) < args.ds:
+        print(f"[collect] ⚠️ DS 到顶：加采 {passes} 遍只攒到 {len(kept)} 个有方差的组"
+              f"（目标 {args.ds}）—— 说明这批题对当前策略**基本没有中间地带**")
+
+    n = save_rollouts(RolloutBatch(groups=train_groups, gen_stats=engine.stats()),
+                      args.out, step=0)
+    # ⚠️ 口径：summary 里的 zero_var_rate / pass_rate / tool_calls_mean 一律按
+    #    **采到的全部**算（= sampled），不是按进训练的那批算 ——
+    #    否则 DS 臂的 zero_var_rate 会恒等于 0（因为留下来的全是有方差的），
+    #    和基线臂完全没法比。要和基线同口径看第一遍：ds_pass0_zero_var_rate。
+    s = RolloutBatch(groups=sampled, gen_stats=engine.stats()).summary()
     stats = engine.stats()
     summary = {
         "select": args.select, "n_tasks": len(items), "n_group": args.n,
+        # ⭐ 采样上限必须落盘。以前 summary 里没有这个字段，分析脚本只能把它写死成
+        #    8192 —— 而 9/18 那轮实际用的是 16384，于是"截断是不是撞 token 预算"
+        #    这个判断会被算错（写死的数字 + 分析脚本 = 数字口径不一致）。
+        "max_seq_tokens": args.max_seq_tokens,
         "n_saved": n, "adapter": args.adapter, "engine": args.engine,
         "seconds": dt, "sec_per_trajectory": dt / max(1, n),
         "new_tokens": stats.total_new_tokens,
         "tok_per_sec": stats.total_new_tokens / max(1e-9, dt),
         **s,
+        # ⭐ DS 记账（ds=0 时这些字段照样在，退化成基线值）
+        "ds_k": args.ds,
+        "ds_passes": passes,
+        "ds_amplify": round(len(sampled) / max(1, pass0_groups), 3),
+        "ds_sampled_groups": len(sampled),
+        "ds_train_groups": len(train_groups),
+        "ds_pass0_zero_var_rate": batch.zero_var_rate,
     }
     Path(args.out).with_suffix(".summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=1), encoding="utf-8")

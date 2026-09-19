@@ -128,10 +128,13 @@ def compute(
     if not eps:
         return {"health": {}, "degradation": {}, "by_group": []}
 
-    # ---- 按 task_id 分组（GRPO 的"组"= 同一道题的 n 条采样）
-    groups: Dict[int, List[Any]] = defaultdict(list)
+    # ---- 按「组」分组（GRPO 的"组"= 同一道题的 n 条采样）
+    groups: Dict[Any, List[Any]] = defaultdict(list)
     for e in eps:
-        groups[e.task_id].append(e)
+        # ⭐ 优先用 group_key：`--ds` 会对**同一道题**加采好几遍（见 rollout_batch.run_ds_passes），
+        #    按 task_id 分会把两遍的 16 条并成一组，"零方差率"就不是"一组 8 条"那个定义了。
+        #    老数据 / 普通路径没有这个属性 → 退回 task_id，行为不变。
+        groups[getattr(e, "group_key", e.task_id)].append(e)
 
     # ================================================================
     # 类 A · 训练健康度
@@ -140,18 +143,21 @@ def compute(
 
     # 组内零方差率 —— 第一监控指标
     zero_var_groups, group_rows = 0, []
-    for tid, g in groups.items():
+    for gkey, g in groups.items():
         rs = [e.reward for e in g]
         sd = st.pstdev(rs) if len(rs) > 1 else 0.0
         is_zero = sd < 1e-8
         zero_var_groups += int(is_zero)
+        # 组键可能是复合的（"5#p1"）—— task_meta 要用**真正的 task_id** 去查
+        real_tid = getattr(g[0], "task_id", gkey)
         group_rows.append({
-            "task_id": tid,
+            "group_key": gkey,
+            "task_id": real_tid,
             "n": len(rs),
             "reward_mean": st.mean(rs),
             "reward_std": sd,
             "zero_variance": is_zero,
-            "cls": task_meta.get(tid, {}).get("class", "?"),
+            "cls": task_meta.get(real_tid, {}).get("class", "?"),
         })
 
     health = {

@@ -16,7 +16,7 @@
   τ-bench 用了 3.10+ 语法（envs/airline/env.py:22 的 match/case、
   model_utils/api/api.py 里的 X | None 注解），**Python 3.9 跑不了**，
   连 import 都过不去（SyntaxError）。本项目统一用：
-      D:/anaconda/envs/myenv/python.exe   （Python 3.13 + pydantic）
+      一个 Python ≥ 3.10 的环境（本项目实测 3.13 + pydantic）
 """
 
 import sys
