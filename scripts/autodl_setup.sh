@@ -69,7 +69,7 @@ else
   $PY -m pip install -q vllm 2>&1 | tail -5
   $PY -c "import vllm;print('  ✓ vllm',vllm.__version__)" \
     || warn "vllm 装不上 —— 先别管，smoke 脚本会用 HF 引擎兜底跑，
-    但正式训练会慢很多。把报错发我。"
+    但正式训练会慢很多。把报错贴出来。"
 fi
 
 # ---------------------------------------------------------------- ④ 模型
@@ -104,7 +104,7 @@ snapshot_download('$MODEL_ID', local_dir='$LOCAL')
 " 2>&1 | tail -3; then
       ok "ModelScope 下载完成"
     else
-      die "两个源都下不动。把上面的报错发我，我换个法子。"
+      die "两个源都下不动。检查网络代理，或手动指定 HF 镜像。"
     fi
   fi
 fi

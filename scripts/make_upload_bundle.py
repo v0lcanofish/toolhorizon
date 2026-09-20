@@ -30,8 +30,12 @@ TAU_BENCH = PROJECT.parent / "reference-repos" / "agentic-grpo-longhorizon" / "t
 OUT = PROJECT / "dist" / "toolhorizon_upload.tar.gz"
 
 INCLUDE_DIRS = ["env", "train", "observe", "scripts", "data"]
-INCLUDE_FILES = ["requirements.txt", "README.md", "smoke-test-清单.md",
-                 "GPU-上卡清单.md", "AutoDL租卡步骤.md", "今天做什么.md"]
+# ⚠️ 2026-09-20：这几个文档从顶层挪进了 docs/（公开前整理）。
+#    改路径时**必须同步改这里** —— 否则它们在包里静默消失，
+#    上卡后才发现少东西（见下面 missing 的警告）。
+INCLUDE_FILES = ["requirements.txt", "README.md",
+                 "docs/smoke-test-清单.md", "docs/GPU-上卡清单.md",
+                 "docs/AutoDL租卡步骤.md"]
 
 SKIP_PATTERNS = ("__pycache__", ".pyc", ".pyo", "runs", "dist")
 
@@ -64,10 +68,16 @@ def main() -> int:
                 if p.is_file() and not skip(p):
                     add(p, str(Path("ToolHorizon") / p.relative_to(PROJECT)))
 
+        missing = []
         for f in INCLUDE_FILES:
             src = PROJECT / f
             if src.is_file():
                 add(src, str(Path("ToolHorizon") / f))
+            else:
+                # ⭐ 2026-09-20 加：原来是**静默跳过** —— 文件改名/挪位置后
+                #    包里悄悄少了东西，上卡才发现。这是本项目反复踩的那个形状
+                #    （「写了但没接进流程」，写错会报错、这个不会）。
+                missing.append(f)
 
         # τ-bench：只装 tau_bench 子目录，**不要** historical_trajectories（51MB，用不上）
         if TAU_BENCH.is_dir():
@@ -82,6 +92,11 @@ def main() -> int:
             print(f"  ⚠️ 没找到 τ-bench：{TAU_BENCH}")
             print(f"     上卡后自己 clone 一份，并设 TAU_BENCH_PATH 指过去：")
             print(f"     git clone https://github.com/sierra-research/tau-bench")
+
+        if missing:
+            print(f"  🔴 有 {len(missing)} 个文件没找到，**不会进包**（检查路径是不是挪了）：")
+            for f in missing:
+                print(f"       {f}")
 
     size_mb = OUT.stat().st_size / 1024 ** 2
     print(f"\n→ {OUT}")

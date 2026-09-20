@@ -18,7 +18,7 @@
       ↓
 ⑤ 跑烟雾测试（约 15 分钟）      ← 这一步才真正烧显卡的钱
       ↓
-⑥ 下载 gpu_smoke.json → 关机 → 发我
+⑥ 下载 gpu_smoke.json → 关机
 ```
 
 ⭐ **省钱的核心在第 ② 步**：AutoDL 可以「**无卡模式**」开机——**没有显卡，但环境是全的**，
@@ -79,7 +79,7 @@ JupyterLab：  点「快捷工具」里的 JupyterLab
 
 **方法 B**：用你本机终端 `scp`（把端口和地址换成你卡片上的）：
 ```bash
-scp -P 12345 "C:/Users/20298/Desktop/shixi/代码库/projects/ToolHorizon/dist/toolhorizon_upload.tar.gz" root@region-1.autodl.com:/root/autodl-tmp/
+scp -P 12345 "dist/toolhorizon_upload.tar.gz" root@region-1.autodl.com:/root/autodl-tmp/
 ```
 
 ### 3.3 开终端，解压
@@ -146,13 +146,13 @@ python scripts/gpu_smoke.py --n 5 --model "$(cat /root/autodl-tmp/models/MODEL_P
 
 ---
 
-## ⑥ 关机，把报告发我
+## ⑥ 关机，取回报告
 
 ```bash
 cat reports/gpu_smoke.json
 ```
 
-**把这一坨复制下来发我**，我据此算：
+**把这一坨复制下来**，据此算：
 - 一轮采样要几分钟
 - 训练 250 步要几小时
 - 总共要烧多少 GPU 小时 ≈ 多少钱
@@ -169,15 +169,44 @@ cat reports/gpu_smoke.json
 | 初始化脚本说 Python 版本太老 | **换镜像重租**，别耗 |
 | 下模型卡住不动 | 停掉，手动跑 `source /etc/network_turbo` 再重跑脚本 |
 | `nvidia-smi` 在无卡模式下不存在 | **正常**，无卡模式就是没显卡。切 GPU 模式就有了 |
-| 显存显示只有 22 GB | 是 4090D，把结果发我，显存账要重算 |
+| 显存显示只有 22 GB | 是 4090D，**显存账要重算**（本项目按 24GB 设计） |
 | 找不到 `tau-bench` 目录 | `export TAU_BENCH_PATH=/root/autodl-tmp/tau-bench` 再跑 |
+| 🔴 **训练跑到一半进程没了** | 见下面「长跑的头号杀手」 |
 
 ---
 
-## 三个检查点，做到了就告诉我
+## ⚠️ 长跑的头号杀手：宿主机重启
 
-1. **租好了** → 告诉我卡型 + 镜像（我确认没选错）
-2. **初始化跑完了** → 告诉我有没有报错
-3. **烟雾测试跑完了** → 把 `gpu_smoke.json` 发我
+**2026-09-20 实测事故**：四臂消融的最后一条臂跑到第 12 轮（凌晨 03:45）突然中断。
 
-**中间任何一步报错，把屏幕上红色的原文整段贴给我**，我来定位。
+怎么判断是**宿主机重启**而不是自己的代码崩：
+
+```bash
+tmux ls                     # → no server running on /tmp/tmux-0/default
+nvidia-smi                  # → 0% / 0MiB / No running processes
+ls -lt runs/<臂>/ckpt/      # → 最后一个 ckpt 停在某时刻，之后几小时无动静
+```
+
+⭐ **`tmux: no server running` 是最硬的信号** ——
+**进程自己崩溃不会杀掉 tmux 服务端，只有重启才会。**
+
+**关键认知**：
+
+- **tmux 只挡"关浏览器"，挡不住宿主机重启。** 它挡掉 99% 的中断，但那 1% 会把前面烧的卡全废掉。
+- **重启后训练不会自动恢复**，必须手动重跑。
+- 所以长跑要按"随时可能被打断"来设计：
+  - 每轮都存 checkpoint（本项目本来逐轮存）
+  - 报告里写清楚**实际跑了多少轮**，别按计划轮数写
+  - 想真正抗打断得加 systemd 单元或开机自启脚本 —— 本项目**没做**，如实标注
+
+**恢复方式**：从最后一个 `ckpt_NNN` 接着跑，或把 `--rounds` 调小重跑补齐剩余轮数。
+
+---
+
+## 三个检查点
+
+1. **租好了** → 记下卡型 + 镜像（对照 §② 确认没选错）
+2. **初始化跑完了** → 确认没有报错
+3. **烟雾测试跑完了** → 取回 `gpu_smoke.json`
+
+**中间任何一步报错，把屏幕上红色的原文整段留下**，再对照上表定位。

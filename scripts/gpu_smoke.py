@@ -324,7 +324,7 @@ def main(argv=None) -> int:
             print(f"  {k:<24} {result[k]}")
     REPORT.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"\n→ 报告写进 {REPORT}")
-    print("→ 把这份 JSON 发我，我据此定采样批量、训练步数和总预算。")
+    print("→ 取回这份 JSON，据此定采样批量、训练步数和总预算。")
     return 0
 
 

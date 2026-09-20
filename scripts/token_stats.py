@@ -8,7 +8,7 @@ T8 · 真实轨迹的 token 长度分布实测（Stage 0 出口判据之一）�
 数据源：tau-bench/historical_trajectories/ 里 gpt-4o / sonnet 的 airline 成功轨迹（reward=1）
 方法：用 Qwen2.5-1.5B 的 tokenizer + apply_chat_template(tools=...) 还原模型真正看到的 token 序列
 
-⚠️ 解释器必须用 anaconda base（torch/transformers 在那里；myenv 只有 τ-bench 需要的）
+⚠️ 解释器必须是有 torch/transformers 的那个环境（与跑 τ-bench 的环境可能不同）
 
 跑法：
   cd 代码库/projects/ToolHorizon
@@ -45,7 +45,7 @@ def load_schema(name):
 
 
 # ⚠️ 为什么手工渲染而不是 apply_chat_template：
-#    本机 anaconda base 的 jinja2 是 2.11.3，而 transformers 4.57 需要 jinja2 ≥ 3.1
+#    曾遇到 conda base 的 jinja2 是 2.11.3，而 transformers 4.57 需要 jinja2 ≥ 3.1
 #    （chat_template_utils 里用了 jinja2.pass_eval_context）。
 #    升级 jinja2 有连带风险，**不动环境**，改成按 Qwen2.5 的模板手工拼串。
 #    拼法与官方模板一致：工具定义注入 system 段；每轮 <|im_start|>role ... <|im_end|>

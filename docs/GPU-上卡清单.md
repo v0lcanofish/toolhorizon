@@ -17,7 +17,7 @@
 
 **为什么先只要这四个数**：后面所有决策（采样批量多大、训练多少步、要不要第二张卡、总预算多少）
 都依赖它们。**先花 1~2 块钱买这四个数，比直接开跑几小时划算得多。**
-拿到数字发我，我据此定方案，再租第二次。
+拿到数字后再定下一步方案。
 
 ---
 
@@ -211,9 +211,9 @@ python scripts/gpu_smoke.py --n 5
 > **`train/collect.py` / `train/trainer.py` 强制用模型自带的 tokenizer。**
 > 原则没错 —— tokenizer 必须和模型同源。只是在 Qwen2.5 这个例子里，两份恰好一样。
 
-### 跑完把报告发我
+### 跑完取回报告
 
-`reports/gpu_smoke.json` 会落盘。**把那个 JSON 发我**，我据此算：
+`reports/gpu_smoke.json` 会落盘。**把那个 JSON 取回**，据此算：
 - 一轮采样要几分钟
 - 训练 250 步要几小时
 - 总共要烧多少 GPU 小时 ≈ 多少钱
@@ -337,7 +337,7 @@ python -m train.run --rounds 20 --select arm_double --n 8 --run-name e6_double  
 | `setup` 时 `CUDA_HOME` 报错 | torch 是 cu126，系统工具链是 12.4 | `ls /usr/local/` 看实际版本，指过去 |
 | vLLM 启动报版本冲突 | vLLM 和 torch/CUDA 版本对不上 | `pip install vllm==<匹配版本>`，别硬升级 torch |
 | 训练启动 OOM，但 `nvidia-smi` 看着是空的 | **vLLM 进程没真死** | `pkill -f vllm`；`collect.py` 跑完会自己退出，真死了才有这问题 |
-| 显存只有 22 GB 出头 | 4090D 或虚拟化切分 | **别往下跑**，显存账要重算，回来告诉我 |
+| 显存只有 22 GB 出头 | 4090D 或虚拟化切分 | **别往下跑**，显存账要重算 |
 | 模型一直自问自答不停止 | 忘了 `stop=["<|im_end|>"]` | `VLLMEngine` 里已经写死了，报这个说明你在用别的引擎 |
 | 采样特别慢（>60s/条） | 弱策略陷入循环，轨迹膨胀到 8–12K | `--max-turns` 调小；或先 SFT 再采样 |
 | 磁盘满 | adapter 每轮 37 MB，20 轮 ≈ 740 MB | `df -h`；把旧 checkpoint 删掉 |
