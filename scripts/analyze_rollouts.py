@@ -246,22 +246,42 @@ def main(argv=None) -> int:
     print("   ⚠️ gold 的 7.1 是**成功轨迹**的统计。我们 pass_rate 才 ~15%，")
     print("      拿失败轨迹去比它本身有偏。正确的对照是下面这两行之比。\n")
     _mean = lambda rs, k: (st.mean([r[k] for r in rs]) if rs else float("nan"))
-    print(f"   {'':<8}{'条数':>6}{'工具调用':>10}{'轮数':>8}{'截断率':>9}{'格式崩':>9}")
+    _per_turn = lambda rs: (st.mean([r["n_tool_calls"] / max(r["n_turns"], 1) for r in rs])
+                            if rs else float("nan"))
+    print(f"   {'':<8}{'条数':>6}{'工具调用':>10}{'轮数':>8}{'工具/轮':>9}{'截断率':>9}{'格式崩':>9}")
     for label, rs in (("成功", ok_rows), ("失败", bad_rows)):
         if not rs:
             print(f"   {label:<8}{0:>6}   —— 这一轮没有{label}轨迹")
             continue
         tr = sum(1 for r in rs if r["terminated_by"] in TRUNCATED) / len(rs)
         print(f"   {label:<8}{len(rs):>6}{_mean(rs,'n_tool_calls'):>10.2f}"
-              f"{_mean(rs,'n_turns'):>8.1f}{tr:>9.1%}{_mean(rs,'n_malformed'):>9.2f}")
+              f"{_mean(rs,'n_turns'):>8.1f}{_per_turn(rs):>9.3f}"
+              f"{tr:>9.1%}{_mean(rs,'n_malformed'):>9.2f}")
+
+    # ⭐ 2026-09-20 修：原来直接比 n_tool_calls 的**均值**，是**长度混淆** ——
+    #    成功轨迹更短（简单题跑几步就完事）⇒ 总数天然更少，跟"成功需要少调工具"无关。
+    #    实测 arm_vanilla step_011：成功 2.33 vs 失败 3.69（看着"调得更少"），
+    #    但按轮归一化是 0.371 vs 0.246（**反号**）。判据改用「工具/轮」。
     if ok_rows and bad_rows:
-        d = _mean(ok_rows, "n_tool_calls") - _mean(bad_rows, "n_tool_calls")
-        verdict = ("成功轨迹**调得更多** → 少调不是「学会做对」的路径"
-                   if d > 0.5 else
-                   "成功轨迹**调得更少** → 与「欠调用 = 在学正确行为」一致" if d < -0.5 else
+        d_raw = _mean(ok_rows, "n_tool_calls") - _mean(bad_rows, "n_tool_calls")
+        d = _per_turn(ok_rows) - _per_turn(bad_rows)
+        print(f"\n   ⇒ 原始差(工具调用) {d_raw:+.2f} ｜ **归一化后(工具/轮) {d:+.3f}**")
+        if abs(d_raw) > 0.5 and (d_raw > 0) != (d > 0):
+            print("      🔴 **两者反号** —— 原始差是长度混淆（成功轨迹更短），判据只看归一化那行。")
+        verdict = ("成功轨迹**每轮调得更多** → 少调不是「学会做对」的路径"
+                   if d > 0.05 else
+                   "成功轨迹**每轮调得更少** → 与「欠调用 = 在学正确行为」一致" if d < -0.05 else
                    "两者**基本持平** → 总 tool_calls 下降**不能**归因于「成功需要少调」")
-        print(f"\n   ⇒ 成功 − 失败 = {d:+.2f} ｜ {verdict}")
-        print("      ⭐ 这一行才是「欠调用」这个说法成不成立的判据。")
+        print(f"      {verdict}")
+
+        # 集中度检查：成功是不是几乎全来自那几道「全对」题？
+        #   若是，这里的「成功 vs 失败」实质是「简单题 vs 难解题」，不是行为差异。
+        cnt = Counter(r["task_id"] for r in ok_rows)
+        top = cnt.most_common(3)
+        share = sum(c for _, c in top) / len(ok_rows)
+        print(f"      ⚠️ 成功轨迹分布在 {len(cnt)} 道题上；最多的 3 道 {top} 占 {share:.0%}"
+              + ("  ← **高度集中：这里的『成功 vs 失败』实质是『简单题 vs 难解题』**"
+                 if share > 0.6 else ""))
 
     # ---------------- ⑧ 读工具 vs 写工具
     print("\n⑧ 掉的是**读**工具还是**写**工具？\n")

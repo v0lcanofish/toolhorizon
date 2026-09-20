@@ -20,7 +20,9 @@
 
     有效更新轨迹数 = (1 − 零方差率) × 组数 × 每组条数
 
-基线臂稳态只有 ~1 条/轮 —— 248 次 step 里 247 次是空转。
+基线臂**稳态约 8–10 条/轮（≈1 组/轮）** —— 248 次 step 里约 240 次是空转。
+（⚠️ 2026-09-20 订正：本文件初版写的是「~1 条/轮 —— 247 次空转」，**量级错了 10 倍** ——
+ 把 31 组里的 1 组错写成了 248 条里的 1 条。实测 arm_vanilla 末轮 (1−0.968)×31×8 = 8 条。）
 这正是 9/17 调研里那句「把更新集中在很小且有偏的子集上」的可测版本。
 
 ⚠️ 图上标签用英文：本机 matplotlib 没有 CJK 字体，中文会渲染成豆腐块
@@ -139,7 +141,7 @@ def main() -> int:
               f"{pct(tail_mean(rows,'pass_rate',n=len(rows))):>13}")
 
     # ---------------- 工具调用相对 gold
-    gold = None
+    gold, g = None, None
     ref = _PROJECT / "data" / "grpo_vanilla_steps.json"
     if ref.exists():
         try:
@@ -156,6 +158,23 @@ def main() -> int:
                 continue
             side = "过调用" if v > g else "**欠调用**"
             print(f"   {name:<14}{v:>6.2f}  = gold 的 {v/g:.2f}×   {side}")
+
+    # ---------------- 末轮快照（防"窗口均值掩盖末值"）
+    # ⚠️ 2026-09-20 加：工具调用尤其危险 —— 四臂都从 ~16 一路掉穿 gold，
+    #    用「后 8 轮均值」读会得出「arm_vanilla 还在过调用侧」，
+    #    看末轮才发现它掉得比谁都深。窗口均值会给出**反号**的结论。
+    print("\n末轮快照（⚠️ 上表的『稳态』是窗口均值，会掩盖末值 —— 工具调用上两者能给出反号结论）：")
+    print(f"   {'臂':<14}{'末轮':>5}{'零方差':>9}{'通过率':>9}{'工具调用':>10}{'vs gold':>10}"
+          f"{'有效更新':>10}")
+    for name, (label, ln, note, rows) in data.items():
+        rows = rows[:common]
+        if not rows:
+            continue
+        L = rows[-1]
+        v = L.get("tool_calls_mean")
+        ratio = f"{v / g:.2f}×" if (v is not None and gold and gold.get("tool_calls_mean")) else "  —"
+        print(f"   {name:<14}{L['step']:>5}{pct(L.get('zero_var_rate')):>9}"
+              f"{pct(L.get('pass_rate')):>9}{f2(v):>10}{ratio:>10}{f2(eff_updates(L)):>10}")
 
     # ---------------- DS 记账
     dsed = {k: v for k, v in data.items() if any(s.get("ds_k") for s in v[3])}
@@ -180,7 +199,9 @@ def main() -> int:
     print("\n" + "=" * 104)
     print("怎么读这张表")
     print("=" * 104)
-    print("  · **有效更新/轮**是这张表的主角：基线稳态 ~1 条，任何臂只要把它抬起来就是有效的。")
+    print("  · **有效更新/轮**是这张表的主角：基线臂稳态约 8–10 条，任何臂只要把它抬起来就是有效的。")
+    print("  · 🆕 **先看『末轮快照』再看主表**：主表是**窗口均值**，会掩盖末值。工具调用上两者")
+    print("    能给出**反号**结论（例：arm_vanilla 窗口均值 1.03× 像在过调用侧，末轮 0.51× 其实掉最深）。")
     print("  · **零方差率**四臂若都在 0.9+ → 说明病根不在算法轴，在**难度校准**（31 道题")
     print("    对当前策略太难），四个臂只是四条平线。")
     print("  · **工具调用**看它落在 gold 的哪一侧 —— 过调用/欠调用是创新点的落点。")
