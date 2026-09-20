@@ -4,13 +4,27 @@
 #
 #   ① 标定 exp_easy     纯采样，不训练（248 条，约 10-20 分钟）
 #   ② 标定 exp_medium   纯采样，不训练
-#   ③ 自动选档：通过率**落在 [15%, 50%] 的那一档**（项目原定的 SFT 出口判据）
+#   ③ 自动选档：**零方差率最低的那一档**（判据是零方差率，**不是通过率** —— 见下面 🔴）
 #   ④ 臂A  arm_<档>_m       length_norm=mean  ds=0  ← 与 arm_vanilla 逐字相同，只换 --select
 #   ⑤ 臂B  arm_<档>_lata    length_norm=lata  ds=0  ← **仅当 ③ 选中的档达标才跑**
 #
 # 为什么要有 ①②③：`exp_medium`（2 个动作）跟现在的 train 档（n_write 均值 1.7）
 #   几乎一样难，`exp_easy`（1 个动作）也未必就简单 —— **没有先验理由认为换档一定更好**，
 #   所以先花 30 分钟量一下，再决定 5 小时的臂跑在哪一档上。
+#
+# 🔴 **为什么判据是零方差率，不是通过率**（2026-09-20 实测订正）
+#   本脚本初版用的是「通过率落在 [15%, 50%]」——那是从 **SFT 出口闸门**搬来的，
+#   它问的是"模型够不够格去训"。而这里要问的是
+#   「**有没有足够的组内方差，让 LATA 的重加权有作用**」—— 那是零方差率，不是通过率。
+#
+#   实测（起点 adapter_sft10，31 题 × 8 条）：
+#       train 档     零方差 0.806  通过率 0.117
+#       exp_easy     零方差 0.613  通过率 0.129   ← 零方差降 19.3pp，**通过率几乎没动**
+#       exp_medium   零方差 1.000  通过率 0.000   ← 248 条一条没对，比旧题集还难
+#   按旧判据 easy 12.9% "差一点没进 [15,50]" ⇒ OK=0 ⇒ **臂B 被误跳过**。
+#   按零方差率判：easy 明确达标。
+#   ⭐ 而且零方差率**两头都高**（太难=整组全错、太易=整组全对），
+#      "最小化它"天然同时排除两个极端 —— 比通过率区间鲁棒得多。
 #
 # 为什么 ⑤ 有条件：现在这批题 96% 全错 ⇒ advantage 几乎恒为 0 ⇒ LATA 的重加权
 #   几乎没有东西可作用。**只有换到有信号的档，⑤ 才回答得了问题**；档没选对就跑 ⑤
@@ -23,7 +37,7 @@
 #     Ctrl+B 然后 D        ← 挂起，关浏览器不影响
 #
 # 覆盖默认值：
-#     ROUNDS=10 LO=0.15 HI=0.50 bash scripts/run_tier.sh
+#     ROUNDS=10 ZV_TARGET=0.75 bash scripts/run_tier.sh
 #
 # ⚠️ 本脚本在任何一个阶段失败时**停下来** —— 失败多半是配置问题，
 #    继续跑只会把同样的错再烧几小时。
@@ -38,8 +52,7 @@ N="${N:-8}"
 LIMIT="${LIMIT:-31}"                   # 每档取前 N 道（和已有臂同为 31 道 × 8 条 = 248）
 ADAPTER="${ADAPTER:-models/adapter_sft10}"
 SMAX="${SMAX:-16384}"
-LO="${LO:-0.15}"                       # 目标通过率下界
-HI="${HI:-0.50}"                       # 目标通过率上界
+ZV_TARGET="${ZV_TARGET:-0.75}"         # 零方差率阈值（旧 train 档在同一起点 adapter_sft10 上是 0.806）
 # ---------------------------------------------------------------------------
 
 echo "=============================================================================="
@@ -96,41 +109,46 @@ calib medium
 echo
 echo "━━━ ③ 选档 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 SEL=$(python - "runs/calib_easy/rollouts/step_000.summary.json" \
-             "runs/calib_medium/rollouts/step_000.summary.json" "$LO" "$HI" <<'PY'
+             "runs/calib_medium/rollouts/step_000.summary.json" "$ZV_TARGET" <<'PY'
 import json, sys
 
 def load(p):
     s = json.load(open(p, encoding="utf-8"))
-    return s["pass_rate"], s["zero_var_rate"], s.get("n_tasks")
+    return s["zero_var_rate"], s["pass_rate"], s.get("n_tasks")
 
 easy = load(sys.argv[1])
 medi = load(sys.argv[2])
-lo, hi = float(sys.argv[3]), float(sys.argv[4])
-mid = (lo + hi) / 2
+zv_target = float(sys.argv[3])
+BASE = 0.806                      # 旧 train 档在同一个起点 adapter_sft10 上实测的零方差率
 
-print(f"   {'档':<10}{'题数':>5}{'通过率':>10}{'零方差率':>10}")
-for name, (p, z, n) in (("exp_easy", easy), ("exp_medium", medi)):
-    print(f"   {name:<10}{n:>5}{p:>9.1%}{z:>10.1%}")
+print(f"   {'档':<12}{'题数':>5}{'零方差率':>11}{'通过率':>10}   判读")
+for name, (z, p, n) in (("exp_easy", easy), ("exp_medium", medi)):
+    if z >= 0.99:
+        tag = "⚠️ 全无信号（整组全错 / 全对）"
+    elif z <= zv_target:
+        tag = f"✅ 有信号（比基线 {BASE:.3f} 低 {BASE - z:.3f}）"
+    else:
+        tag = f"信号不足（只比基线低 {BASE - z:.3f}）"
+    print(f"   {name:<12}{n:>5}{z:>11.3f}{p:>10.1%}   {tag}")
 
-def dist(p):                      # 到目标区间的距离：落在区间内 = 0
-    return 0.0 if lo <= p <= hi else (lo - p if p < lo else p - hi)
-
+# ⭐ 判据是**零方差率**不是通过率 —— 理由见文件头 🔴 那一节。
+#    零方差率两头都高（太难=整组全错、太易=整组全对），"最小化它"
+#    天然同时排除两个极端，比通过率区间鲁棒。
 cands = [("easy", easy[0]), ("medium", medi[0])]
-# 先取"落在区间内"的；都不在就取"离区间最近"的
-inwin = [c for c in cands if lo <= c[1] <= hi]
-pick = min(inwin, key=lambda c: abs(c[1] - mid)) if inwin \
-       else min(cands, key=lambda c: dist(c[1]))
-ok = "1" if inwin else "0"
+pick = min(cands, key=lambda c: c[1])
+ok = "1" if pick[1] <= zv_target else "0"
 
 print()
-if inwin:
-    print(f"   ✅ 选中 **exp_{pick[0]}**（通过率 {pick[1]:.1%} 落在 [{lo:.0%}, {hi:.0%}] 内）")
-    print(f"      其余档：{', '.join(f'{n}={p:.1%}' for n, p in cands if n != pick[0])}")
+if ok == "1":
+    print(f"   ✅ 选中 **exp_{pick[0]}**（零方差率 {pick[1]:.3f} ≤ 阈值 {zv_target}）"
+          f" ⇒ 有信号，⑤（LATA 臂）会跑")
 else:
-    print(f"   ⚠️ **两个档没有一个落进 [{lo:.0%}, {hi:.0%}]** —— 仍然选最接近的 exp_{pick[0]}"
-          f"（通过率 {pick[1]:.1%}）")
-    print(f"      含义：换难度档**没有解决**难度校准问题，④ 的结果会是又一次『没信号』。")
+    print(f"   ⚠️ **两个档的零方差率都 > 阈值 {zv_target}**（最低 {min(easy[0], medi[0]):.3f}）"
+          f" —— 仍然选最低的 exp_{pick[0]}")
     print(f"      ⑤（LATA 臂）**将被跳过** —— 没有信号就没有东西可以重加权。")
+    print(f"      ⭐ 但**别当失败下结论**：看通过率那一列 ——")
+    print(f"         若通过率跟基线差不多、而零方差降了很多，说明只是**阈值定严了**"
+          f"（换档其实有效），⑤ 值得手动补跑：bash scripts/run_arm_b.sh")
 print(f"__TIER__={pick[0]}")
 print(f"__OK__={ok}")
 PY
